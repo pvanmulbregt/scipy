@@ -1879,6 +1879,11 @@ from _legacy cimport smirnovi_unsafe as _func_smirnovi_unsafe
 ctypedef double _proto_smirnovi_unsafe_t(double, double) nogil
 cdef _proto_smirnovi_unsafe_t *_proto_smirnovi_unsafe_t_var = &_func_smirnovi_unsafe
 cdef extern from "_ufuncs_defs.h":
+    cdef double _func_smirnovp "smirnovp"(int, double) nogil
+from _legacy cimport smirnovp_unsafe as _func_smirnovp_unsafe
+ctypedef double _proto_smirnovp_unsafe_t(double, double) nogil
+cdef _proto_smirnovp_unsafe_t *_proto_smirnovp_unsafe_t_var = &_func_smirnovp_unsafe
+cdef extern from "_ufuncs_defs.h":
     cdef double _func_spence "spence"(double) nogil
 from _spence cimport cspence as _func_cspence
 ctypedef double complex _proto_cspence_t(double complex) nogil
@@ -12518,6 +12523,38 @@ ufunc_smirnovi_data[0] = &ufunc_smirnovi_ptr[2*0]
 ufunc_smirnovi_data[1] = &ufunc_smirnovi_ptr[2*1]
 ufunc_smirnovi_data[2] = &ufunc_smirnovi_ptr[2*2]
 smirnovi = np.PyUFunc_FromFuncAndData(ufunc_smirnovi_loops, ufunc_smirnovi_data, ufunc_smirnovi_types, 3, 2, 1, 0, "smirnovi", ufunc_smirnovi_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc_smirnovp_loops[3]
+cdef void *ufunc_smirnovp_ptr[6]
+cdef void *ufunc_smirnovp_data[3]
+cdef char ufunc_smirnovp_types[9]
+cdef char *ufunc_smirnovp_doc = (
+    "smirnovp(n, e)\n"
+    "\n"
+    "Derivative of `smirnov`.\n"
+    "``.")
+ufunc_smirnovp_loops[0] = <np.PyUFuncGenericFunction>loop_d_id__As_ld_d
+ufunc_smirnovp_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc_smirnovp_loops[2] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc_smirnovp_types[0] = <char>NPY_LONG
+ufunc_smirnovp_types[1] = <char>NPY_DOUBLE
+ufunc_smirnovp_types[2] = <char>NPY_DOUBLE
+ufunc_smirnovp_types[3] = <char>NPY_FLOAT
+ufunc_smirnovp_types[4] = <char>NPY_FLOAT
+ufunc_smirnovp_types[5] = <char>NPY_FLOAT
+ufunc_smirnovp_types[6] = <char>NPY_DOUBLE
+ufunc_smirnovp_types[7] = <char>NPY_DOUBLE
+ufunc_smirnovp_types[8] = <char>NPY_DOUBLE
+ufunc_smirnovp_ptr[2*0] = <void*>_func_smirnovp
+ufunc_smirnovp_ptr[2*0+1] = <void*>(<char*>"smirnovp")
+ufunc_smirnovp_ptr[2*1] = <void*>_func_smirnovp_unsafe
+ufunc_smirnovp_ptr[2*1+1] = <void*>(<char*>"smirnovp")
+ufunc_smirnovp_ptr[2*2] = <void*>_func_smirnovp_unsafe
+ufunc_smirnovp_ptr[2*2+1] = <void*>(<char*>"smirnovp")
+ufunc_smirnovp_data[0] = &ufunc_smirnovp_ptr[2*0]
+ufunc_smirnovp_data[1] = &ufunc_smirnovp_ptr[2*1]
+ufunc_smirnovp_data[2] = &ufunc_smirnovp_ptr[2*2]
+smirnovp = np.PyUFunc_FromFuncAndData(ufunc_smirnovp_loops, ufunc_smirnovp_data, ufunc_smirnovp_types, 3, 2, 1, 0, "smirnovp", ufunc_smirnovp_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc_spence_loops[4]
 cdef void *ufunc_spence_ptr[8]
