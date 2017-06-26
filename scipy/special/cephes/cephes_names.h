@@ -94,5 +94,8 @@
 #define smirnovp cephes_smirnovp
 #define kolmogorov cephes_kolmogorov
 #define kolmogi cephes_kolmogi
+#define kolmogp cephes_kolmogp
+#define kolmogc cephes_kolmogc
+#define kolmogci cephes_kolmogci
 
 #endif
