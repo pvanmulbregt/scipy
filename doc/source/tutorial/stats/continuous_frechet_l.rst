@@ -4,12 +4,14 @@
 Fréchet (left-skewed, Extreme Value Type III, Weibull maximum) Distribution
 ============================================================================
 
-Defined for :math:`x<0` and :math:`c>0` .
+One shape parameter :math:`c>0` and support :math:`x\in(-\infty, 0]`.
 
 .. math::
    :nowrap:
 
-    \begin{eqnarray*} f\left(x;c\right) & = & c\left(-x\right)^{c-1}\exp\left(-\left(-x\right)^{c}\right)\\ F\left(x;c\right) & = & \exp\left(-\left(-x\right)^{c}\right)\\ G\left(q;c\right) & = & -\left(-\log q\right)^{1/c}\end{eqnarray*}
+    \begin{eqnarray*} f\left(x;c\right) & = & c\left(-x\right)^{c-1}\exp\left(-\left(-x\right)^{c}\right)\\
+    F\left(x;c\right) & = & \exp\left(-\left(-x\right)^{c}\right)\\
+    G\left(q;c\right) & = & -\left(-\log q\right)^{1/c}\end{eqnarray*}
 
 The mean is the negative of the right-skewed Frechet distribution
 given above, and the other statistical parameters can be computed from
@@ -22,7 +24,7 @@ given above, and the other statistical parameters can be computed from
 
      h\left[X\right]=-\frac{\gamma}{c}-\log\left(c\right)+\gamma+1
 
-where :math:`\gamma` is Euler's constant and equal to
+where :math:`\gamma` is Euler's constant and is approximately equal to
 
 .. math::
 

@@ -366,7 +366,7 @@ class beta_gen(rv_continuous):
         beta.pdf(x, a, b) = ------------------------------------
                                      gamma(a)*gamma(b)
 
-    for ``0 < x < 1``, ``a > 0``, ``b > 0``, where ``gamma(z)`` is the gamma
+    for ``0 <= x <= 1``, ``a > 0``, ``b > 0``, where ``gamma(z)`` is the gamma
     function (`scipy.special.gamma`).
 
     `beta` takes ``a`` and ``b`` as shape parameters.
@@ -527,7 +527,7 @@ class betaprime_gen(rv_continuous):
 
         betaprime.pdf(x, a, b) = x**(a-1) * (1+x)**(-a-b) / beta(a, b)
 
-    for ``x > 0``, ``a > 0``, ``b > 0``, where ``beta(a, b)`` is the beta
+    for ``x >= 0``, ``a > 0``, ``b > 0``, where ``beta(a, b)`` is the beta
     function (see `scipy.special.beta`).
 
     `betaprime` takes ``a`` and ``b`` as shape parameters.
@@ -588,7 +588,7 @@ class bradford_gen(rv_continuous):
 
         bradford.pdf(x, c) = c / (k * (1+c*x)),
 
-    for ``0 < x < 1``, ``c > 0`` and ``k = log(1+c)``.
+    for ``0 <= x <= 1``, ``c > 0`` and ``k = log(1+c)``.
 
     `bradford` takes ``c`` as a shape parameter.
 
@@ -643,7 +643,7 @@ class burr_gen(rv_continuous):
 
         burr.pdf(x, c, d) = c * d * x**(-c-1) * (1+x**(-c))**(-d-1)
 
-    for ``x > 0``.
+    for ``x >= 0``.
 
     `burr` takes ``c`` and ``d`` as shape parameters.
 
@@ -693,7 +693,7 @@ class burr12_gen(rv_continuous):
 
         burr12.pdf(x, c, d) = c * d * x**(c-1) * (1+x**(c))**(-d-1)
 
-    for ``x > 0``.
+    for ``x >= 0``.
 
     `burr12` takes ``c`` and ``d`` as shape parameters.
 
@@ -763,7 +763,7 @@ class fisk_gen(burr_gen):
 
         fisk.pdf(x, c) = c * x**(-c-1) * (1 + x**(-c))**(-2)
 
-    for ``x > 0``.
+    for ``x >= 0``.
 
     `fisk` takes ``c`` as a shape parameters.
 
@@ -849,7 +849,7 @@ class chi_gen(rv_continuous):
 
         chi.pdf(x, df) = x**(df-1) * exp(-x**2/2) / (2**(df/2-1) * gamma(df/2))
 
-    for ``x > 0``.
+    for ``x >= 0``.
 
     Special cases of `chi` are:
 
@@ -1037,7 +1037,7 @@ class dweibull_gen(rv_continuous):
 
         dweibull.pdf(x, c) = c / 2 * abs(x)**(c-1) * exp(-abs(x)**c)
 
-    `dweibull` takes ``d`` as a shape parameter.
+    `dweibull` takes ``c`` as a shape parameter.
 
     %(after_notes)s
 
@@ -1219,7 +1219,7 @@ class exponweib_gen(rv_continuous):
         exponweib.pdf(x, a, c) =
             a * c * (1-exp(-x**c))**(a-1) * exp(-x**c)*x**(c-1)
 
-    for ``x > 0``, ``a > 0``, ``c > 0``.
+    for ``x >= 0``, ``a > 0``, ``c > 0``.
 
     `exponweib` takes ``a`` and ``c`` as shape parameters.
 
@@ -1307,7 +1307,7 @@ class fatiguelife_gen(rv_continuous):
         fatiguelife.pdf(x, c) =
             (x+1) / (2*c*sqrt(2*pi*x**3)) * exp(-(x-1)**2/(2*x*c**2))
 
-    for ``x > 0``.
+    for ``x >= 0``.
 
     `fatiguelife` takes ``c`` as a shape parameter.
 
@@ -1550,7 +1550,7 @@ class frechet_r_gen(rv_continuous):
 
         frechet_r.pdf(x, c) = c * x**(c-1) * exp(-x**c)
 
-    for ``x > 0``, ``c > 0``.
+    for ``x >= 0``, ``c > 0``.
 
     `frechet_r` takes ``c`` as a shape parameter.
 
@@ -1655,7 +1655,7 @@ class genlogistic_gen(rv_continuous):
 
         genlogistic.pdf(x, c) = c * exp(-x) / (1 + exp(-x))**(c+1)
 
-    for ``x > 0``, ``c > 0``.
+    for ``x >= 0``, ``c > 0``.
 
     `genlogistic` takes ``c`` as a shape parameter.
 
@@ -2503,7 +2503,7 @@ class halfnorm_gen(rv_continuous):
 
         halfnorm.pdf(x) = sqrt(2/pi) * exp(-x**2/2)
 
-    for ``x > 0``.
+    for ``x >= 0``.
 
     `halfnorm` is a special case of `chi` with ``df == 1``.
 
@@ -2617,7 +2617,7 @@ class invgamma_gen(rv_continuous):
 
         invgamma.pdf(x, a) = x**(-a-1) / gamma(a) * exp(-1/x)
 
-    for x > 0, a > 0.
+    for x >= 0, a > 0.
 
     `invgamma` takes ``a`` as a shape parameter.
 
@@ -2681,7 +2681,7 @@ class invgauss_gen(rv_continuous):
 
         invgauss.pdf(x, mu) = 1 / sqrt(2*pi*x**3) * exp(-(x-mu)**2/(2*x*mu**2))
 
-    for ``x > 0``.
+    for ``x >= 0``.
 
     `invgauss` takes ``mu`` as a shape parameter.
 
@@ -2780,7 +2780,7 @@ class johnsonsb_gen(rv_continuous):
 
         johnsonsb.pdf(x, a, b) = b / (x*(1-x)) * phi(a + b * log(x/(1-x)))
 
-    for ``0 < x < 1`` and ``a, b > 0``, and ``phi`` is the normal pdf.
+    for ``0 <= x <= 1`` and ``a, b > 0``, and ``phi`` is the normal pdf.
 
     `johnsonsb` takes ``a`` and ``b`` as shape parameters.
 
@@ -2898,7 +2898,7 @@ class levy_gen(rv_continuous):
 
         levy.pdf(x) = 1 / (x * sqrt(2*pi*x)) * exp(-1/(2*x))
 
-    for ``x > 0``.
+    for ``x >= 0``.
 
     This is the same as the Levy-stable distribution with a=1/2 and b=1.
 
@@ -2941,7 +2941,7 @@ class levy_l_gen(rv_continuous):
 
         levy_l.pdf(x) = 1 / (abs(x) * sqrt(2*pi*abs(x))) * exp(-1/(2*abs(x)))
 
-    for ``x < 0``.
+    for ``x <= 0``.
 
     This is the same as the Levy-stable distribution with a=1/2 and b=-1.
 
@@ -3307,7 +3307,7 @@ class maxwell_gen(rv_continuous):
 
         maxwell.pdf(x) = sqrt(2/pi)x**2 * exp(-x**2/2)
 
-    for ``x > 0``.
+    for ``x >= 0``.
 
     %(after_notes)s
 
@@ -3352,7 +3352,7 @@ class mielke_gen(rv_continuous):
 
         mielke.pdf(x, k, s) = k * x**(k-1) / (1+x**s)**(1+k/s)
 
-    for ``x > 0``.
+    for ``x >= 0``.
 
     `mielke` takes ``k`` and ``s`` as shape parameters.
 
@@ -3683,7 +3683,7 @@ class nakagami_gen(rv_continuous):
         nakagami.pdf(x, nu) = 2 * nu**nu / gamma(nu) *
                               x**(2*nu-1) * exp(-nu*x**2)
 
-    for ``x > 0``, ``nu > 0``.
+    for ``x >= 0``, ``nu > 0``.
 
     `nakagami` takes ``nu`` as a shape parameter.
 
@@ -3723,7 +3723,7 @@ class ncx2_gen(rv_continuous):
         ncx2.pdf(x, df, nc) = exp(-(nc+x)/2) * 1/2 * (x/nc)**((df-2)/4)
                               * I[(df-2)/2](sqrt(nc*x))
 
-    for ``x > 0``.
+    for ``x >= 0``.
 
     `ncx2` takes ``df`` and ``nc`` as shape parameters.
 
@@ -4315,7 +4315,7 @@ class powernorm_gen(rv_continuous):
         powernorm.pdf(x, c) = c * phi(x) * (Phi(-x))**(c-1)
 
     where ``phi`` is the normal pdf, and ``Phi`` is the normal cdf,
-    and ``x > 0``, ``c > 0``.
+    and ``x >= 0``, ``c > 0``.
 
     `powernorm` takes ``c`` as a shape parameter.
 
@@ -4492,7 +4492,7 @@ class rice_gen(rv_continuous):
 
         rice.pdf(x, b) = x * exp(-(x**2+b**2)/2) * I[0](x*b)
 
-    for ``x > 0``, ``b > 0``.
+    for ``x >= 0``, ``b > 0``.
 
     `rice` takes ``b`` as a shape parameter.
 
@@ -4776,7 +4776,7 @@ class truncexpon_gen(rv_continuous):
 
         truncexpon.pdf(x, b) = exp(-x) / (1-exp(-b))
 
-    for ``0 < x < b``.
+    for ``0 <= x <= b``.
 
     `truncexpon` takes ``b`` as a shape parameter.
 
@@ -5016,7 +5016,7 @@ class wald_gen(invgauss_gen):
 
         wald.pdf(x) = 1/sqrt(2*pi*x**3) * exp(-(x-1)**2/(2*x))
 
-    for ``x > 0``.
+    for ``x >= 0``.
 
     `wald` is a special case of `invgauss` with ``mu == 1``.
 
