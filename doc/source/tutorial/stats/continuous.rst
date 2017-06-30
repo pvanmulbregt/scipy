@@ -181,6 +181,25 @@ References
    Sons, 1994.
 
 
+In the tutorials several special functions appear repeatedly and are listed here.
+
+===============================  ======================================================================================  =============================================================================================================================
+Symbol                           Description                                                                             Definition
+===============================  ======================================================================================  =============================================================================================================================
+:math:`\gamma\left(s, x\right)`  lower incomplete Gamma function                                                         :math:`\int_0^x t^{s-1} e^{-t} dt`
+:math:`\Gamma\left(s, x\right)`  upper incomplete Gamma function                                                         :math:`\int_x^\infty t^{s-1} e^{-t} dt`
+:math:`B\left(x;a,b\right)`      incomplete Beta function                                                                :math:`\int_{0}^{x} t^{a-1}\left(1-t\right)^{b-1} dt`
+:math:`I\left(x;a,b\right)`      regularized incomplete Beta function                                                    :math:`\frac{\Gamma\left(a+b\right)}{\Gamma\left(a\right)\Gamma\left(b\right)} \int_{0}^{x} t^{a-1}\left(1-t\right)^{b-1} dt`
+:math:`\phi\left(x\right)`       PDF for normal distribution                                                             :math:`\frac{1}{\sqrt{2\pi}}e^{-x^{2}/2}`
+:math:`\Phi\left(x\right)`       CDF for normal distribution                                                             :math:`\int_{-\infty}^{x}\phi\left(t\right) dt = \frac{1}{2}+\frac{1}{2}\mathrm{erf}\left(\frac{x}{\sqrt{2}}\right)`
+:math:`\psi\left(z\right)`       digamma function                                                                        :math:`\frac{d}{dz} \log\left(\Gamma\left(z\right)\right)`
+:math:`\psi_{n}\left(z\right)`   polygamma function                                                                      :math:`\frac{d^{n+1}}{dz^{n+1}}\log\left(\Gamma\left(z\right)\right)`
+:math:`I_{\nu}\left(y\right)`    modified Bessel function of the first kind
+:math:`\mathrm{Ei}(\mathrm{z})`  exponential integral                                                                    :math:`-\int_{-x}^\infty \frac{e^{-t}}{t} dt`
+:math:`\zeta\left(n\right)`      Riemann zeta function                                                                   :math:`\sum_{k=1}^{\infty} \frac{1}{k^{n}}`
+:math:`\zeta\left(n,z\right)`    Hurwitz zeta function                                                                   :math:`\sum_{k=0}^{\infty} \frac{1}{\left(k+z\right)^{n}}`
+===============================  ======================================================================================  =============================================================================================================================
+
 
 Continuous Distributions in `scipy.stats`
 -----------------------------------------

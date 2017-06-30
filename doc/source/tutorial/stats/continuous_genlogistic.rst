@@ -33,7 +33,9 @@ Note that the polygamma function is
 .. math::
    :nowrap:
 
-    \begin{eqnarray*} \psi_{n}\left(z\right) & = & \frac{d^{n+1}}{dz^{n+1}}\log\Gamma\left(z\right)\\  & = & \left(-1\right)^{n+1}n!\sum_{k=0}^{\infty}\frac{1}{\left(z+k\right)^{n+1}}\\  & = & \left(-1\right)^{n+1}n!\zeta\left(n+1,z\right)\end{eqnarray*}
+    \begin{eqnarray*} \psi_{n}\left(z\right) & = & \frac{d^{n+1}}{dz^{n+1}}\log\Gamma\left(z\right)\\
+    & = & \left(-1\right)^{n+1}n!\sum_{k=0}^{\infty}\frac{1}{\left(z+k\right)^{n+1}}\\
+    & = & \left(-1\right)^{n+1}n!\zeta\left(n+1,z\right)\end{eqnarray*}
 
 where :math:`\zeta\left(k,x\right)` is a generalization of the Riemann zeta function called the Hurwitz
 zeta function. Note that :math:`\zeta\left(n\right)\equiv\zeta\left(n,1\right)`.
