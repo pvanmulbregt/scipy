@@ -198,6 +198,8 @@ npy_int shichi(npy_double, npy_double *, npy_double *);
 npy_int sici(npy_double, npy_double *, npy_double *);
 npy_double sindg(npy_double);
 npy_double smirnov(npy_int, npy_double);
+npy_double smirnovc(npy_int, npy_double);
+npy_double smirnovci(npy_int, npy_double);
 npy_double smirnovi(npy_int, npy_double);
 npy_double smirnovp(npy_int, npy_double);
 npy_double spence(npy_double);

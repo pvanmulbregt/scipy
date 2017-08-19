@@ -855,10 +855,23 @@ class TestCephes(TestCase):
         assert_equal(cephes.smirnov(1,.1),0.9)
         assert_(np.isnan(cephes.smirnov(1,np.nan)))
 
+    def test_smirnovc(self):
+        assert_equal(cephes.smirnovc(1,.1),0.1)
+        assert_(np.isnan(cephes.smirnovc(1,np.nan)))
+        x10 = np.linspace(0, 1, 11, endpoint=True)
+        assert_almost_equal(cephes.smirnovc(3, x10), 1-cephes.smirnov(3, x10))
+        x4 = np.linspace(0, 1, 5, endpoint=True)
+        assert_almost_equal(cephes.smirnovc(4, x4), 1-cephes.smirnov(4,  x4))
+
     def test_smirnovi(self):
         assert_almost_equal(cephes.smirnov(1,cephes.smirnovi(1,0.4)),0.4)
         assert_almost_equal(cephes.smirnov(1,cephes.smirnovi(1,0.6)),0.6)
         assert_(np.isnan(cephes.smirnovi(1,np.nan)))
+
+    def test_smirnovci(self):
+        assert_almost_equal(cephes.smirnovc(1,cephes.smirnovci(1,0.4)),0.4)
+        assert_almost_equal(cephes.smirnovc(1,cephes.smirnovci(1,0.6)),0.6)
+        assert_(np.isnan(cephes.smirnovci(1,np.nan)))
 
     def test_spence(self):
         assert_equal(cephes.spence(1),0.0)

@@ -28,7 +28,9 @@ cdef extern from "cephes.h":
     double kn(int n, double x) nogil
     double yn(int n, double x) nogil
     double smirnov(int n, double e) nogil
+    double smirnovc(int n, double e) nogil
     double smirnovi(int n, double p) nogil
+    double smirnovci(int n, double p) nogil
     double smirnovp(int n, double p) nogil
 
 cdef extern from "amos_wrappers.h":
@@ -95,9 +97,17 @@ cdef inline double smirnov_unsafe(double n, double e) nogil:
     _legacy_cast_check("smirnov", n, 0)
     return smirnov(<int>n, e)
 
+cdef inline double smirnovc_unsafe(double n, double e) nogil:
+    _legacy_cast_check("smirnovc", n, 0)
+    return smirnovc(<int>n, e)
+
 cdef inline double smirnovi_unsafe(double n, double p) nogil:
     _legacy_cast_check("smirnovi", n, 0)
     return smirnovi(<int>n, p)
+
+cdef inline double smirnovci_unsafe(double n, double p) nogil:
+    _legacy_cast_check("smirnovci", n, 0)
+    return smirnovci(<int>n, p)
 
 cdef inline double smirnovp_unsafe(double n, double p) nogil:
     _legacy_cast_check("smirnovp", n, 0)

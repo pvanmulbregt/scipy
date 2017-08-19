@@ -1874,6 +1874,16 @@ from _legacy cimport smirnov_unsafe as _func_smirnov_unsafe
 ctypedef double _proto_smirnov_unsafe_t(double, double) nogil
 cdef _proto_smirnov_unsafe_t *_proto_smirnov_unsafe_t_var = &_func_smirnov_unsafe
 cdef extern from "_ufuncs_defs.h":
+    cdef double _func_smirnovc "smirnovc"(int, double) nogil
+from _legacy cimport smirnovc_unsafe as _func_smirnovc_unsafe
+ctypedef double _proto_smirnovc_unsafe_t(double, double) nogil
+cdef _proto_smirnovc_unsafe_t *_proto_smirnovc_unsafe_t_var = &_func_smirnovc_unsafe
+cdef extern from "_ufuncs_defs.h":
+    cdef double _func_smirnovci "smirnovci"(int, double) nogil
+from _legacy cimport smirnovci_unsafe as _func_smirnovci_unsafe
+ctypedef double _proto_smirnovci_unsafe_t(double, double) nogil
+cdef _proto_smirnovci_unsafe_t *_proto_smirnovci_unsafe_t_var = &_func_smirnovci_unsafe
+cdef extern from "_ufuncs_defs.h":
     cdef double _func_smirnovi "smirnovi"(int, double) nogil
 from _legacy cimport smirnovi_unsafe as _func_smirnovi_unsafe
 ctypedef double _proto_smirnovi_unsafe_t(double, double) nogil
@@ -12490,6 +12500,77 @@ ufunc_smirnov_data[0] = &ufunc_smirnov_ptr[2*0]
 ufunc_smirnov_data[1] = &ufunc_smirnov_ptr[2*1]
 ufunc_smirnov_data[2] = &ufunc_smirnov_ptr[2*2]
 smirnov = np.PyUFunc_FromFuncAndData(ufunc_smirnov_loops, ufunc_smirnov_data, ufunc_smirnov_types, 3, 2, 1, 0, "smirnov", ufunc_smirnov_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc_smirnovc_loops[3]
+cdef void *ufunc_smirnovc_ptr[6]
+cdef void *ufunc_smirnovc_data[3]
+cdef char ufunc_smirnovc_types[9]
+cdef char *ufunc_smirnovc_doc = (
+    "smirnovc(n, e)\n"
+    "\n"
+    "Kolmogorov-Smirnov cumulative distribution function\n"
+    "\n"
+    "Returns the exact Kolmogorov-Smirnov cumulative\n"
+    "distribution function (Dn+ or Dn-) for a one-sided test of\n"
+    "equality between an empirical and a theoretical distribution. It\n"
+    "is equal to the probability that the maximum difference between a\n"
+    "theoretical distribution and an empirical one based on `n` samples\n"
+    "is less than or equal to e.")
+ufunc_smirnovc_loops[0] = <np.PyUFuncGenericFunction>loop_d_id__As_ld_d
+ufunc_smirnovc_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc_smirnovc_loops[2] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc_smirnovc_types[0] = <char>NPY_LONG
+ufunc_smirnovc_types[1] = <char>NPY_DOUBLE
+ufunc_smirnovc_types[2] = <char>NPY_DOUBLE
+ufunc_smirnovc_types[3] = <char>NPY_FLOAT
+ufunc_smirnovc_types[4] = <char>NPY_FLOAT
+ufunc_smirnovc_types[5] = <char>NPY_FLOAT
+ufunc_smirnovc_types[6] = <char>NPY_DOUBLE
+ufunc_smirnovc_types[7] = <char>NPY_DOUBLE
+ufunc_smirnovc_types[8] = <char>NPY_DOUBLE
+ufunc_smirnovc_ptr[2*0] = <void*>_func_smirnovc
+ufunc_smirnovc_ptr[2*0+1] = <void*>(<char*>"smirnovc")
+ufunc_smirnovc_ptr[2*1] = <void*>_func_smirnovc_unsafe
+ufunc_smirnovc_ptr[2*1+1] = <void*>(<char*>"smirnovc")
+ufunc_smirnovc_ptr[2*2] = <void*>_func_smirnovc_unsafe
+ufunc_smirnovc_ptr[2*2+1] = <void*>(<char*>"smirnovc")
+ufunc_smirnovc_data[0] = &ufunc_smirnovc_ptr[2*0]
+ufunc_smirnovc_data[1] = &ufunc_smirnovc_ptr[2*1]
+ufunc_smirnovc_data[2] = &ufunc_smirnovc_ptr[2*2]
+smirnovc = np.PyUFunc_FromFuncAndData(ufunc_smirnovc_loops, ufunc_smirnovc_data, ufunc_smirnovc_types, 3, 2, 1, 0, "smirnovc", ufunc_smirnovc_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc_smirnovci_loops[3]
+cdef void *ufunc_smirnovci_ptr[6]
+cdef void *ufunc_smirnovci_data[3]
+cdef char ufunc_smirnovci_types[9]
+cdef char *ufunc_smirnovci_doc = (
+    "smirnovci(n, y)\n"
+    "\n"
+    "Inverse to `smirnovc`\n"
+    "\n"
+    "Returns ``e`` such that ``smirnovc(n, e) = y``.")
+ufunc_smirnovci_loops[0] = <np.PyUFuncGenericFunction>loop_d_id__As_ld_d
+ufunc_smirnovci_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc_smirnovci_loops[2] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc_smirnovci_types[0] = <char>NPY_LONG
+ufunc_smirnovci_types[1] = <char>NPY_DOUBLE
+ufunc_smirnovci_types[2] = <char>NPY_DOUBLE
+ufunc_smirnovci_types[3] = <char>NPY_FLOAT
+ufunc_smirnovci_types[4] = <char>NPY_FLOAT
+ufunc_smirnovci_types[5] = <char>NPY_FLOAT
+ufunc_smirnovci_types[6] = <char>NPY_DOUBLE
+ufunc_smirnovci_types[7] = <char>NPY_DOUBLE
+ufunc_smirnovci_types[8] = <char>NPY_DOUBLE
+ufunc_smirnovci_ptr[2*0] = <void*>_func_smirnovci
+ufunc_smirnovci_ptr[2*0+1] = <void*>(<char*>"smirnovci")
+ufunc_smirnovci_ptr[2*1] = <void*>_func_smirnovci_unsafe
+ufunc_smirnovci_ptr[2*1+1] = <void*>(<char*>"smirnovci")
+ufunc_smirnovci_ptr[2*2] = <void*>_func_smirnovci_unsafe
+ufunc_smirnovci_ptr[2*2+1] = <void*>(<char*>"smirnovci")
+ufunc_smirnovci_data[0] = &ufunc_smirnovci_ptr[2*0]
+ufunc_smirnovci_data[1] = &ufunc_smirnovci_ptr[2*1]
+ufunc_smirnovci_data[2] = &ufunc_smirnovci_ptr[2*2]
+smirnovci = np.PyUFunc_FromFuncAndData(ufunc_smirnovci_loops, ufunc_smirnovci_data, ufunc_smirnovci_types, 3, 2, 1, 0, "smirnovci", ufunc_smirnovci_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc_smirnovi_loops[3]
 cdef void *ufunc_smirnovi_ptr[6]

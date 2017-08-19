@@ -213,6 +213,8 @@ cdef void shichi(Dd_number_t x0, Dd_number_t *y0, Dd_number_t *y1) nogil
 cdef void sici(Dd_number_t x0, Dd_number_t *y0, Dd_number_t *y1) nogil
 cpdef double sindg(double x0) nogil
 cpdef double smirnov(dl_number_t x0, double x1) nogil
+cpdef double smirnovc(dl_number_t x0, double x1) nogil
+cpdef double smirnovci(dl_number_t x0, double x1) nogil
 cpdef double smirnovi(dl_number_t x0, double x1) nogil
 cpdef double smirnovp(dl_number_t x0, double x1) nogil
 cpdef Dd_number_t spence(Dd_number_t x0) nogil

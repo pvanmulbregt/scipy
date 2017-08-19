@@ -898,6 +898,16 @@ Available Functions
         double smirnov(long, double)
         double smirnov(double, double)
 
+- :py:func:`~scipy.special.smirnovc`::
+
+        double smirnovc(long, double)
+        double smirnovc(double, double)
+
+- :py:func:`~scipy.special.smirnovci`::
+
+        double smirnovci(long, double)
+        double smirnovci(double, double)
+
 - :py:func:`~scipy.special.smirnovi`::
 
         double smirnovi(long, double)
@@ -1586,6 +1596,16 @@ cdef extern from "_ufuncs_defs.h":
 from _legacy cimport smirnov_unsafe as _func_smirnov_unsafe
 ctypedef double _proto_smirnov_unsafe_t(double, double) nogil
 cdef _proto_smirnov_unsafe_t *_proto_smirnov_unsafe_t_var = &_func_smirnov_unsafe
+cdef extern from "_ufuncs_defs.h":
+    cdef npy_double _func_smirnovc "smirnovc"(npy_int, npy_double)nogil
+from _legacy cimport smirnovc_unsafe as _func_smirnovc_unsafe
+ctypedef double _proto_smirnovc_unsafe_t(double, double) nogil
+cdef _proto_smirnovc_unsafe_t *_proto_smirnovc_unsafe_t_var = &_func_smirnovc_unsafe
+cdef extern from "_ufuncs_defs.h":
+    cdef npy_double _func_smirnovci "smirnovci"(npy_int, npy_double)nogil
+from _legacy cimport smirnovci_unsafe as _func_smirnovci_unsafe
+ctypedef double _proto_smirnovci_unsafe_t(double, double) nogil
+cdef _proto_smirnovci_unsafe_t *_proto_smirnovci_unsafe_t_var = &_func_smirnovci_unsafe
 cdef extern from "_ufuncs_defs.h":
     cdef npy_double _func_smirnovi "smirnovi"(npy_int, npy_double)nogil
 from _legacy cimport smirnovi_unsafe as _func_smirnovi_unsafe
@@ -3180,6 +3200,24 @@ cpdef double smirnov(dl_number_t x0, double x1) nogil:
         return _func_smirnov(x0, x1)
     elif dl_number_t is double:
         return _func_smirnov_unsafe(x0, x1)
+    else:
+        return NPY_NAN
+
+cpdef double smirnovc(dl_number_t x0, double x1) nogil:
+    """See the documentation for scipy.special.smirnovc"""
+    if dl_number_t is long:
+        return _func_smirnovc(x0, x1)
+    elif dl_number_t is double:
+        return _func_smirnovc_unsafe(x0, x1)
+    else:
+        return NPY_NAN
+
+cpdef double smirnovci(dl_number_t x0, double x1) nogil:
+    """See the documentation for scipy.special.smirnovci"""
+    if dl_number_t is long:
+        return _func_smirnovci(x0, x1)
+    elif dl_number_t is double:
+        return _func_smirnovci_unsafe(x0, x1)
     else:
         return NPY_NAN
 
