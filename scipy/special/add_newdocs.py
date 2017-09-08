@@ -6356,6 +6356,20 @@ add_newdoc("scipy.special", "smirnov",
     is greater than e.
     """)
 
+add_newdoc("scipy.special", "smirnovc",
+    """
+    smirnovc(n, e)
+
+    Kolmogorov-Smirnov cumulative distribution function
+
+    Returns the exact Kolmogorov-Smirnov cumulative
+    distribution function (Dn+ or Dn-) for a one-sided test of
+    equality between an empirical and a theoretical distribution. It
+    is equal to the probability that the maximum difference between a
+    theoretical distribution and an empirical one based on `n` samples
+    is less than or equal to e.
+    """)
+
 add_newdoc("scipy.special", "smirnovi",
     """
     smirnovi(n, y)
@@ -6364,6 +6378,23 @@ add_newdoc("scipy.special", "smirnovi",
 
     Returns ``e`` such that ``smirnov(n, e) = y``.
     """)
+
+add_newdoc("scipy.special", "smirnovci",
+    """
+    smirnovci(n, y)
+
+    Inverse to `smirnovc`
+
+    Returns ``e`` such that ``smirnovc(n, e) = y``.
+    """)
+
+add_newdoc("scipy.special", "smirnovp",
+    """
+    smirnovp(n, y)
+
+    Derivative of `smirnov`
+    """)
+
 
 add_newdoc("scipy.special", "spence",
     r"""

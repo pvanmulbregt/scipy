@@ -197,7 +197,10 @@ extern double zeta ( double x, double q );
 extern double zetac ( double x );
 
 extern double smirnov (int n, double e );
+extern double smirnovc (int n, double e );
+extern double smirnovp (int n, double x );
 extern double smirnovi (int n, double p );
+extern double smirnovci (int n, double p );
 extern double kolmogorov ( double x );
 extern double kolmogi ( double p );
 
