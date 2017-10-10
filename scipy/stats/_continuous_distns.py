@@ -40,7 +40,7 @@ class ksone_gen(rv_continuous):
 
     """
     def _cdf(self, x, n):
-        return 1.0 - sc.smirnov(n, x)
+        return sc.smirnovc(n, x)
 
     def _sf(self, x, n):
         return sc.smirnov(n, x)
@@ -49,7 +49,7 @@ class ksone_gen(rv_continuous):
         return -sc.smirnovp(n, x)
 
     def _ppf(self, q, n):
-        return sc.smirnovi(n, 1.0 - q)
+        return sc.smirnovci(n, q)
 
     def _isf(self, q, n):
         return sc.smirnovi(n, q)

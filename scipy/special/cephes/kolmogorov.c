@@ -12,39 +12,54 @@
  *     n     -inf < x < inf         n
  *
  *
- *                  [n(1-e)]
+ *                  [n(1-d)]
  *        +            -                    v-1              n-v
- *    Pr{D   > e} =    >    C    e (e + v/n)    (1 - e - v/n)
+ *    Pr{D   > d} =    >    C    d (d + v/n)    (1 - d - v/n)
  *        n            -   n v
  *                    v=0
  *
- * (also equals the following sum, but note the terms are big and alternating in sign)
+ * (also equals the following sum, but note the terms may be large and alternating in sign)
  *                         n
  *                         -                         v-1              n-v
- *                =  1 -   >         C    e (e + v/n)    (1 - e - v/n)
+ *                =  1 -   >         C    d (d + v/n)    (1 - d - v/n)
  *                         -        n v
- *                       v=[n(1-e)]+1
+ *                       v=[n(1-d)]+1
  *
- * [n(1-e)] is the largest integer not exceeding n(1-e).
+ * [n(1-d)] is the largest integer not exceeding n(1-d).
  * nCv is the number of combinations of n things taken v at a time.
- * "e" here is being used as an abbreviation of "epsilon", not of e=2.71828...
  */
 
 
 #include "mconf.h"
 #include "float.h"
+#include "math.h"
 extern double MAXLOG;
 
 #ifndef MIN
 #define MIN(a,b) (((a) < (b)) ? (a) : (b))
 #endif
 
+// Assuming LOW and HIGH are constants.  It still evaluates X twice...
+#define CLIP(X, LOW, HIGH) ((X) < LOW ? LOW : MIN(X, HIGH))
+
+static const int MIN_EXPABLE = (-708 - 38); // exp() of anything below this returns 0
+
+static const double _xtol = DBL_EPSILON;
+static const double _rtol = 2*DBL_EPSILON;
+
+static int _within_tol(double x, double y, double atol, double rtol)
+{
+    double diff = fabs(x-y);
+    int result = (diff <=  (atol + rtol * fabs(y)));
+    return result;
+}
+
 /* Kolmogorov's limiting distribution of two-sided test, returns
  * probability that sqrt(n) * max deviation > x,
  * or that max deviation > x/sqrt(n).
  * The approximation is useful for the tail of the distribution
  * when n is large.
- * If complement, return 1-p == Pr(max deviation <= x/sqrt(n))
+ * If cdf is non-zero, return 1-p == Pr(max deviation <= x/sqrt(n))
  */
 
  /* Two series for kolmogorov(x), a Jacobi theta function
@@ -52,201 +67,315 @@ extern double MAXLOG;
   *  sqrt(2pi)/x * sum exp((2k-1)^2pi^2/(8x^2))   (sum over positive integer k)
   *  The second is good for x close to 1, the first for x nearer to 1 (and above)
  */
-#define X_MIN_USE_ORIGINAL 1.0
+
 #define KOLMOG_RTOL (DBL_EPSILON)
 
-static double _kolmogorov(double x, int complement)
-{
-    /* If complement, return 1-p */
-    double p, t;
+#define KOLMOG_CUTOVER 1.0
+#define KOLMOG_JIGGER 0.1
+#define KOLMOG_EPSILON (DBL_EPSILON / 2)
 
+static double _kolmogorov(double x, int cdf)
+{
+    double P = 1.0;
+
+    if (npy_isnan(x)) {
+        return NPY_NAN;
+    }
     if (x <= 0) {
-	return (complement ? 0 : 1.0);
+        return (cdf ? 0.0 : 1.0);
     }
-    if (x >= X_MIN_USE_ORIGINAL) {
-	double alpha = -2.0 * x * x;
-	double sign = 1.0;
-	double r = 1.0;
-	p = 0.0;
-	do {
-	    t = exp(alpha * r * r);
-	    p += sign * t;
-	    if (t == 0.0)
-		break;
-	    r += 1.0;
-	    sign = -sign;
-	}
-	while ((t / p) > KOLMOG_RTOL);
-	p = 2*p;
-	if (p > 1) {
-	    p = 1;
-	} else if (p < 0) {
-	    p = 0;
-	}
-	if (complement) {
-	    p = 1-p;
-	}
-    } else {
-	double alpha = - NPY_PI * NPY_PI / (8 * x * x);
-	double r = 1;
-	p = 0.0;
-	/* For 0 < x <= 0.0406, the first term in the series is <= ~np.exp(-748) which is 0
-	For ~0.0406 <= x <= ~0.0418, the intermediate computation involves denormalized doubles.     */
-	do {
-	    t = exp(alpha * r * r);
-	    p += t;
-	    if (fabs(t) == 0.0)
-		break;
-	    r +=  2;
-	} while ((t / p) >= KOLMOG_RTOL);
-	p *= sqrt(2 * NPY_PI) / x;
-	if (p > 1) {
-	    p = 1;
-	} else if (p < 0) {
-	    p = 0;
-	}
-	if (!complement) {
-	    p = 1-p;
-	}
+    // x <= 0.040611972203751713
+    if (x <= NPY_PI/sqrt(-MIN_EXPABLE * 8)) {
+        return (cdf ? 0.0 : 1.0);
     }
-    return p;
+
+    P = 1.0;
+    if (x <= KOLMOG_CUTOVER) {
+        double w = sqrt(2 * NPY_PI)/x;
+        double logu8 = -NPY_PI * NPY_PI/(x * x); // log(u^8)
+        double u = exp(logu8/8);
+        if (u == 0) {
+            // P = w*u, but u < 1e-308, and w > 1, so compute as logs, then exponentiate
+            double logP = logu8/8 + log(w);
+            P = exp(logP);
+        } else {
+            // Look for u**(2k-1)**2 / u**1 < eps
+            double Nmax = 8 * log(KOLMOG_EPSILON) / logu8;
+            // Nmax  "=" (2k-1)**2 - 1
+            int k = (int)(floor((sqrt(Nmax + 1) + 1)/2 + KOLMOG_JIGGER));
+            int r = k - 1;
+            assert (r <= 2); // Additional terms needed as x approximately crosses: 0.52, 0.9, 1.29, 1.65
+            for(; r>0; r--) {
+                P = 1 + exp(logu8 * r) * P;  // (1 + u**(8r) * P)
+            }
+            P = w * u * P;
+        }
+        if (!cdf) {
+            P = 1 - P;
+        }
+    }
+    else {
+        /* Want q^((2k-1)^2)(1-q^(4k-1)) / q(1-q^3) < epsilon */
+        double logv = -2*x*x;
+        double v = exp(logv);
+        double Nmax = log(KOLMOG_EPSILON)/logv;
+        double f0 = 2*sqrt(Nmax+1)/3 + 1;
+        double delta1 = log(f0)/logv;
+        Nmax += delta1 * (1.05);
+        // Nmax  "=" k**2 - 1
+        int k = (int)(floor(2*sqrt(Nmax + 1)/3 + 1 + KOLMOG_JIGGER));
+        assert (k <= 4); // Additional terms neeed as x crosses: 4.2, 1.5, 0.88,...
+        // If k > 10, rework as sum with consecutive terms paired.
+        for( ; k>1; k--) {
+            // P = 1 - pow(v, 2*k-1) * P; // 1 - (1-v**(2r-1)) * P
+            P = -expm1(logv * (2*k - 1) + log(P));
+        }
+        P = 2 * v * P;
+        if (cdf) {
+            P = 1 - P;
+        }
+    }
+    return CLIP(P, 0, 1);
 }
+
 
 double kolmogorov(double x)
 {
+    if (npy_isnan(x)) {
+        return NPY_NAN;
+    }
     return _kolmogorov(x, 0);
 }
 
 double kolmogc(double x)
 {
+    if (npy_isnan(x)) {
+        return NPY_NAN;
+    }
     return _kolmogorov(x, 1);
 }
 
 double kolmogp(double x)
 {
-    double pp, t;
+    double pp;
 
-    if (x <= 0)
-	return 0.0;
+    if (npy_isnan(x)) {
+        return NPY_NAN;
+    }
+    if (x <= 0) {
+        return -0.0;
+    }
 
-    if (x >= X_MIN_USE_ORIGINAL) {
-	double alpha = -2.0 * x * x;
-	double sign = 1.0;
-	double r = 1.0;
-	pp = 0.0;
-	do {
-	    double r2 = r*r;
-	    t = exp(alpha * r2);
-	    if (t == 0.0)
-		break;
-	    pp += sign * t * r2;
-	    r += 1.0;
-	    sign = -sign;
-	}  while ((t / pp) > KOLMOG_RTOL);
-	pp = -8 * pp;
-    } else {
-	double alpha = - NPY_PI * NPY_PI / (8 * x * x);
-	double r = 1;
-	double pp1 = 0.0;
-	double sqrt2pi = sqrt(2 * NPY_PI);
-	pp = 0.0;
-	do {
-	    double r2 = r*r;
-	    double q2n = exp(alpha * r2);
-	    t = r2 * q2n;
-	    pp += t;
-	    pp1 += q2n;
-	    if (t == 0.0)
-		break;
-	    r +=  2;
-	} while ((t / pp) >= KOLMOG_RTOL);
-	pp1 *= sqrt2pi/x/x;
-	pp *= pow(NPY_PI, 2) * sqrt2pi / pow(x, 4) / 4;
-	pp = -pp + pp1;
+    if (x <= KOLMOG_CUTOVER) {
+        /* kolmog(x) = sqrt(2pi) * f(x)/x). Use Product Rule to differentiate */
+        // double w = sqrt(2 * NPY_PI)/x;
+        double logu = -NPY_PI * NPY_PI/(8 * x * x);
+        // double u = exp(logu);
+        double Nmax = log(KOLMOG_EPSILON) / logu ;
+        const double SQRT2PI = sqrt(2*NPY_PI);
+        int k = (int)(floor((sqrt(Nmax + 1)+1)/2 + KOLMOG_JIGGER));
+        double p0 = 0.0, p1 = 0.0;
+        assert (k <= 4);
+        for(; k>0; k--) {
+            int r = 2*k - 1;
+            int r2 = r*r;
+            double qn = exp(logu * r2);
+            p0 += qn;
+            p1 += r2 * qn;
+        }
+        p0 /= x*x;
+        p1 *= pow(NPY_PI, 2);
+        p1 /= 4;
+        p1 /= pow(x, 4);
+        pp = (-p0 + p1)  * SQRT2PI;
+        /* pp is derivative of CDF, want derivative of SF */
+        pp = -pp;
+    }
+    else {
+        double logv = -2 * x*x;
+        //  double v = exp(logv);
+        double Nmax = log(KOLMOG_EPSILON)/logv;
+        // Nmax  "=" (2r-1)**2 - 1
+        int k = (int)(floor((sqrt(Nmax + 1)+1) + KOLMOG_JIGGER));
+        assert (k <= 4);
+        pp = 0;
+        for( ; k>0; k--) {
+            int k2 = k*k;
+            //  pp = k2 * pow(v, k2) - pp;
+            pp = k2 * exp(logv * k2) - pp;
+        }
+        pp *= (-8*x);
     }
     return pp;
 }
 
-/* Functional inverse of Kolmogorov statistic for two-sided test.
- * Finds x such that kolmogorov(x) = p (or 1-p if complement is True).
- * If x = smirnovi (n, p), then kolmogi(2 * p) / sqrt(n) should
- * be close to x.  */
-static double _kolmogi(double p, int complement)
+/* Find x such kolmogorov(x)=psf, kolmogc(x)=pcdf */
+static double _kolmogi(double psf, double pcdf)
 {
     double x, t;
+    double xmin = 0;
+    double xmax = NPY_INFINITY;
+    double fmin = 1 - psf;
+    double fmax = pcdf - 1;
     int iterations;
+    double a = xmin, b = xmax;
+    double fa = fmin, fb = fmax;
+    const double SQRT2PI = sqrt(2*NPY_PI);
 
-    if (!(p >= 0.0 && p <= 1.0)) {
-	mtherr("kolmogi", DOMAIN);
-	return (NPY_NAN);
+    if (!(psf >= 0.0 && pcdf >= 0.0 && pcdf <= 1.0 && psf <= 1.0)) {
+        mtherr("smirnovi", DOMAIN);
+        return (NPY_NAN);
     }
-    if (p == 0) {
-	return (complement ? 0.0 : (NPY_NAN));
+    if (fabs(1.0 - pcdf - psf) >  4* DBL_EPSILON) {
+        mtherr("kolmogi", DOMAIN);
+        return (NPY_NAN);
     }
-    if (fabs(1.0 - p) < 1e-16) {
-	return (complement ? (NPY_NAN) : 0);
+    if (pcdf == 0.0) {
+        return 0.0;
+    }
+    if (psf == 0.0) {
+        return NPY_INFINITY;
     }
 
-    /* For x between 0.5 and 1, kolmogorov(x) is close to the straight line
-     connecting (0.5, 1) to (1.0, 0.25). I.e. p ~ (-6x+7)/4.
-     Otherwise use the approximation p ~ 2 exp(-2x^2) */
-    if (!complement) {
-	x = ((p > 0.25) ? (7-4*p)/6.0 : sqrt(-0.5 * log(0.5 * p)));
-    } else {
-	x = ((p < 0.75) ? (3+4*p)/6.0 : sqrt(-0.5 * (log(0.5) + log1p(-p))));
+    if (pcdf <= 0.5) {
+        /* p ~ (sqrt(2pi)/x) *exp(-pi^2/8x^2).  Generate lower and upper bounds  */
+        double logpcdf = log(pcdf);
+        const double logSQRT2PI = log(SQRT2PI);
+        const double SQRT2 = sqrt(2.0);
+        /* 1 >= x >= p.  */
+        /* Even better: 1 >= x >= sqrt(p) */
+        // Iterate twice: x -> pi/(sqrt(8) sqrt(log(sqrt(2pi)) - log(x) - log(pdf)))
+        // a = NPY_PI / (2 * SQRT2 * sqrt(-(logpcdf + logpcdf - logSQRT2PI)));
+        /* First time */
+        a = NPY_PI / (2 * SQRT2 * sqrt(-(logpcdf + logpcdf/2 - logSQRT2PI)));
+        b = NPY_PI / (2 * SQRT2 * sqrt(-(logpcdf + 0 - logSQRT2PI)));
+        /* Iterate once more */
+        a = NPY_PI / (2 * SQRT2 * sqrt(-(logpcdf + log(a) - logSQRT2PI)));
+        b = NPY_PI / (2 * SQRT2 * sqrt(-(logpcdf + log(b) - logSQRT2PI)));
+        x =  (a + b) / 2.0;
     }
+    else {
+        // Based on the approximation p ~ 2 exp(-2x^2)
+        //  Found that needed to replace psf with a slightly smaller number in the second element
+        //   as otherwise _kolmogorov(b) came back as a very small number but with
+        //  the same sign as _kolmogorov(a)
+        //  kolmogi(0.5) = 0.82757355518990772
+        //  so (1-q^(-(4-1)*2*x^2)) = (1-exp(-6*0.8275^2) ~ (1-exp(-4.1)
+        const double jiggerb = 256 * DBL_EPSILON;
+        double pba = psf/(1.0 - exp(-4))/2, pbb = psf * (1 - jiggerb)/2;
+        double p2, q0;
+        a = sqrt(-0.5 * log(pba));
+        b = sqrt(-0.5 * log(pbb));
+        // Use inversion of p = q - q^4 + q^9 - ...:
+        //                 q = p + p^4 + 4p^7 - p^9 + 22p^10 ...
+        p2 = psf/2.0;
+        q0 = p2 + pow(p2, 4) + 4 * pow(p2, 7);
+        x = sqrt(-log(q0) / 2);
+        if (x < a || x > b) {
+            x = (a+b)/2;
+        }
+    }
+    assert(a <= b);
+
     iterations = 0;
     do {
-	double x0 = x;
-	double val = _kolmogorov(x0, complement);
-	double df = val - p;
-	double dpdy;
-	if (fabs(df) == 0) {
-	    break;
-	}
-	dpdy = kolmogp(x0);
-	if (fabs(dpdy) <= 0.0) {
-	    mtherr("kolmogi", UNDERFLOW);
-	    return 0.0;
-	}
-	if (complement) {
-	    dpdy = -dpdy;
-	}
-	t = df/dpdy;
-	x = x0 - t;
-	if (x < 0) {
-	    t = x0/2;
-	    x = x0 - t;
-	}
+        double x0 = x;
+        double df = ((pcdf < 0.5) ? (pcdf - _kolmogorov(x0, 1)) : (_kolmogorov(x0, 0) - psf));
+        double dfdx;
 
-	if (fabs(t/x) < KOLMOG_RTOL) {
-	    break;
-	}
+        if (fabs(df) == 0) {
+            break;
+        }
+        /* Update the bracketing interval */
+        if (df > 0) {
+            if (x > a) {
+                a = x;
+                fa = df;
+            }
+        } else if (df < 0) {
+            if (x < b) {
+                b = x;
+                fb = df;
+            }
+        }
 
-	if (++iterations > MAXITER) {
-	    mtherr("kolmogi", TOOMANY);
-	    break;
-	}
+        dfdx = kolmogp(x0);
+        if (fabs(dfdx) <= 0.0) {
+            // This is a problem for pure N-R, but we are bracketed, so can just do a bisection step!
+            if (0) {
+                /* Check if the value of df is already so small,
+                so that we can't do any better no matter how hard we try */
+                int krexp;
+                frexp(df, &krexp);
+                if (krexp > -1000) {
+                    break;
+                }
+                mtherr("kolmogi", UNDERFLOW);
+                return 0.0;
+            }
+            x = (a+b)/2;
+            t = x0 - x;
+        }
+        else {
+            t = df/dfdx;
+            x = x0 - t;
+        }
+
+        /* Check out-of-bounds.
+        Not expecting this to happen often --- kolmogorov is convex near x=infinity and
+        concave near x=0, and we should be approaching from the correct side.
+        If out-of-bounds, replace x with a midpoint of the bracket. */
+        if (x >= a && x <= b)
+        {
+            if (_within_tol(x, x0, _xtol, _rtol)) {
+                break;
+            }
+            if ((x == a) || (x == b)) {
+                x = (a + b) / 2.0;
+                /* If the bracket is already so small ... */
+                if (x == a || x == b) {
+                    break;
+                }
+            }
+        }
+        else {
+            x = (a + b) / 2.0;
+            if (_within_tol(x, x0, _xtol, _rtol)) {
+                break;
+            }
+        }
+
+        if (++iterations > MAXITER) {
+            mtherr("kolmogi", TOOMANY);
+            break;
+        }
     } while(1);
-    // while (fabs(t / x) > 1.0e-10);
     return (x);
 }
 
-/* Functional inverse of Kolmogorov statistic for two-sided test.
+
+/* Functional inverse of Kolmogorov survival statistic for two-sided test.
  * Finds x such that kolmogorov(x) = p.
  */
 double kolmogi(double p)
 {
-     return _kolmogi(p, 0);
+    if (npy_isnan(p)) {
+        return NPY_NAN;
+    }
+    return _kolmogi(p, 1-p);
 }
 
-/* Functional inverse of Kolmogorov statistic for two-sided test.
+/* Functional inverse of Kolmogorov cumulative statistic for two-sided test.
  * Finds x such that kolmogc(x) = p (or kolmogorov(x) = 1-p).
  */
 double kolmogci(double p)
 {
-     return _kolmogi(p, 1);
+    if (npy_isnan(p)) {
+        return NPY_NAN;
+    }
+    return _kolmogi(1-p, p);
 }
+
 
 /* Now the Smirnov functions for one-sided testing. */
 
@@ -263,7 +392,7 @@ double kolmogci(double p)
 #define SM_UPPER_MAX_TERMS 3
 
 /* Exact Smirnov statistic, for one-sided test.  */
-static double _smirnov(int n, double e, int cdf)
+static double _smirnov(int n, double d, int cdf)
 {
     int nn;
     double p;
@@ -271,42 +400,46 @@ static double _smirnov(int n, double e, int cdf)
     int nTerms;
 
     /* This comparison should assure returning NaN whenever
-     * e is NaN itself.  In original || form it would proceed */
-    if (!(n > 0 && e >= 0.0 && e <= 1.0))
+     * d is NaN itself.  In original || form it would proceed */
+    if (!(n > 0 && d >= 0.0 && d <= 1.0)) {
         return (NPY_NAN);
-    if (e == 0.0)
+    }
+    if (d == 0.0) {
         return (cdf ? 0.0 : 1.0);
-    if (e == 1.0)
+    }
+    if (d == 1.0) {
         return (cdf ? 1.0 : 0.0);
+    }
     if (n == 1) {
-        return (cdf ? e : 1-e);
+        return (cdf ? d : 1-d);
     }
 
-    bUseUpperSum = ((n*e <= 1)
-                    || ((n >= SM_UPPERSUM_MIN_N) && (n*e <= SM_UPPER_MAX_TERMS)
-                        && (e <= 0.5/sqrt(n))));
+    bUseUpperSum = ((n*d <= 1)
+                    || ((n >= SM_UPPERSUM_MIN_N) && (n*d <= SM_UPPER_MAX_TERMS)
+                        && (d <= 0.5/sqrt(n))));
 
     if (bUseUpperSum) {
-        nn = (int) (ceil((double) n * (1.0 - e)));
+        nn = (int) (floor((double) n * (1.0 - d)));
         nTerms = n - nn;
     } else {
-        nn = (int) (floor((double) n * (1.0 - e)));
+        nn = (int) (floor((double) n * (1.0 - d)));
         nn = MIN(nn, n-1);
         nTerms = nn+1;
     }
+
     p = 0.0;
     if (n < SM_POLY_MAX_N) {
         double c = 1.0;
         double p0 = 0;
         int i = 0;
         if (!bUseUpperSum) {
-            p0 = exp(log1p(-e) * n); //  pow(1-e, (double)(n));
+            p0 = exp(log1p(-d) * n); //  pow(1-d, (double)(n));
             c *= n;
             i++;
         }
         for (; i < nTerms; i++) {
             int v = (bUseUpperSum ? n - i : i);
-            double evn = e + ((double) v) / n;
+            double evn = d + ((double) v) / n;
             double omevn = 1.0-evn;
             double aomevn = fabs(omevn);
             int sign = 1;
@@ -338,14 +471,14 @@ static double _smirnov(int n, double e, int cdf)
                 sign = -1;
             }
             p += sign * t;
-            /* Next combinatorial term; worst case error = 4e-15.  */
+            /* Next update the combinatorial term  */
             if (bUseUpperSum) {
                 c *= ((double) (v)) / (n - v + 1);
             } else {
                 c *= ((double) (n - v)) / (v + 1);
             }
         }
-        p = p*e + p0;
+        p = p*d + p0;
         if ((cdf && !bUseUpperSum) || (!cdf && bUseUpperSum)) {
             p = 1 - p;
         }
@@ -356,7 +489,7 @@ static double _smirnov(int n, double e, int cdf)
         int i = 0;
         for (i=0; i < nTerms; i++) {
             int v = (bUseUpperSum ? n - i : i);
-            double evn = e + ((double) v) / n;
+            double evn = d + ((double) v) / n;
             double omevn = 1.0-evn;
             double aomevn = fabs(omevn);
             int sign = 1;
@@ -372,29 +505,31 @@ static double _smirnov(int n, double e, int cdf)
                 p += sign * exp(lt);
             }
         }
-        p *= e;
+        p *= d;
         if ((cdf && !bUseUpperSum) || (!cdf && bUseUpperSum)) {
             p = 1 - p;
         }
     }
     // Ensure within [0, 1]
-    if (p > 1) {
-        p = 1;
-    } else if (p < 0) {
-        p = 0;
-    }
+    p = CLIP(p, 0, 1);
     return p;
 }
 
 
-double smirnov(int n, double e)
+double smirnov(int n, double d)
 {
-    return _smirnov(n, e, 0);
+    if (npy_isnan(d)) {
+        return NPY_NAN;
+    }
+    return _smirnov(n, d, 0);
 }
 
-double smirnovc(int n, double e)
+double smirnovc(int n, double d)
 {
-    return _smirnov(n, e, 1);
+    if (npy_isnan(d)) {
+        return NPY_NAN;
+    }
+    return _smirnov(n, d, 1);
 }
 
 
@@ -450,7 +585,7 @@ static double smirnovp_pow(int n, double x)
             if (coeff != 0) {
                 t = c * pow(omxvn, n-2) * coeff;
                 if (t == 0) {
-                    double nmv2 = (n-v-1)/2.0;
+                    double nmv2 = (n-2)/2.0;
                     double powhf = pow(omxvn, nmv2);
                     if (powhf != 0) {
                         t = (powhf * c) * coeff * powhf;
@@ -578,7 +713,7 @@ double smirnovp(int n, double x)
     if (x == 0.0) {
         return -1.0;
     }
-    /* If x is very small, use the alternate sum to evaluate */
+    /* If x is very small, use the alternate sum (one term only) to evaluate */
     if (n * x <= 1) {
         double pp = -exp((n - 2) * log1p(x)) * (1 + n * x);
         return pp;
@@ -591,20 +726,6 @@ double smirnovp(int n, double x)
     return smirnovp_gamma(n, x);
 }
 
-
-static double _xtol = 2e-14;
-static double _rtol = 4*DBL_EPSILON;
-
-static int _within_tol(double x, double y, double atol, double rtol)
-{
-    double diff = fabs(x-y);
-    int result = (diff <=  (atol + rtol * fabs(y)));
-    return result;
-}
-
-#define MAX_BISECTION_STEPS 10
-#define SQRTN_MULTIPLIER 0.5
-#define MIN_N_ADJUST_ESTIMATE 5
 
 /* Solve smirnov(n, x) == p for p in [0, 1] with constraint 0<=x<=1.
 
@@ -626,12 +747,8 @@ static int _within_tol(double x, double y, double atol, double rtol)
     2. Handle n==1: smirnov(1,x) = 1-x
     3. Exactly handle the case of extremely small p with a formula.
        (corresponds to (n-1)/n < x < 1.0).
-    4a. Generate an initial estimate for x using the asymptotic limit.
-    4b. If indications are that the initial estimate is not
-        going to be good enough, use a few bisection steps
-        to get a better initial estimate, which, importantly, is
-        on the "correct" side of the true value.
-    4c. Use Newton-Raphson to find the root, ensuring estimates stay within the interval [0,1].
+    4a. Generate an initial bracket [a,b] and starting value x0 using the asymptotic limit.
+    4b. Use Newton-Raphson to find the root, ensuring estimates stay within the interval [a,b].
         [Instrumentation suggest it converges in ~6-10 iterations for n<=100.]
 
     Note on 3.
@@ -641,7 +758,7 @@ static int _within_tol(double x, double y, double atol, double rtol)
     Asymptotically this cutoff handles fewer and fewer values of p,
     but smirnov(n, x) is not smooth at (1-1/n), so it is still useful.
 
-    Note on 4b.  The estimate is always > correct value of x.
+    Note on 4b.  The estimate from the asymptotic is always > correct value of x.
       This can present a big problem if the true value lies on
       the "sloped" part of the graph, but the initial estimate lies on
       the "flat" part of the graph, (or if the estimate is bigger than 1.)
@@ -667,190 +784,153 @@ static int _within_tol(double x, double y, double atol, double rtol)
     to achieve same (or better) accuracy.
 */
 
-#define MAX_FIXEDPOINT_ITERATIONS 10
 
 /* Functional inverse of Smirnov distribution
- * finds x such that _smirnov(n, x, cdf) = p.  */
-static double _smirnovi(int n, double p, int cdf)
+ * finds x such that smirnov(n, x) = psf; smirnovc(n, x) = pcdf).  */
+static double _smirnovi(int n, double psf, double pcdf)
 {
+    /* Need to use a bracketing NR algorithm here and be very careful about the starting point */
     double x, logpsf, logpcdf;
     int iterations = 0;
     int function_calls = 0;
-    double sqrtn;
-    double pcdf = (cdf ? p : 1-p);
-    double psf = (cdf ? 1-p : p);
-    double maxlogp;
+    double a=0, b=1;
+    double fa=pcdf, fb = -psf;
+    double xmin, xmax, xmax6;
+    double maxlogpcdf;
 
-    if (!(n > 0 && p >= 0.0 && p <= 1.0)) {
+    if (!(n > 0 && psf >= 0.0 && pcdf >= 0.0 && pcdf <= 1.0 && psf <= 1.0)) {
         mtherr("smirnovi", DOMAIN);
         return (NPY_NAN);
     }
-    if (p == 0.0) {
-        return (cdf ? 0.0 : 1.0);
-    } else if (p == 1.0) {
-        return (cdf ? 1.0 : 0.0);
-    } else if (n == 1) {
-        return (cdf ? p : 1-p);
+    if (fabs(1.0 - pcdf - psf) >  4* DBL_EPSILON) {
+        mtherr("smirnovi", DOMAIN);
+        return (NPY_NAN);
+    }
+    if (pcdf == 0.0) {
+        return 0.0;
+    }
+    if (psf == 0.0) {
+        return 1.0;
+    }
+    if (n == 1) {
+        return pcdf;
     }
 
     /* Handle psf *very* close to 0.  Correspond to (n-1)/n < x < 1  */
-    logpsf = (cdf ? log1p(-pcdf) : log(psf));
-    logpcdf = (cdf ? log(pcdf) : log1p(-psf));
-    if (logpsf < -n * log(n)) {
+    logpsf = log(psf);
+    logpcdf = log(pcdf);
+
+    xmin = - expm1(logpsf / n);  // =  1.0 - exp(lp / n)
+    xmax = sqrt(-logpsf / (2.0 * n));
+    xmax6 = xmax - 1.0 / (6 * n);
+
+    if (logpsf <= -n * log(n)) { // xmin > 1 - 1.0 / n
         // Solve exactly.
-        x = - expm1(logpsf / n);
+        x = xmin;
         return x;
     }
 
     /* Handle 0 < x <= 1/n:   pcdf = x * (1+x)^*(n-1)  */
-    logpcdf = log(pcdf);
-    maxlogp = -np.log(n) + (n - 1) * np.log1p(1.0 / n)
-
-    if (logpcdf < maxlogp) {
-#ifdef USE_ALPHA_ITERATION
-        double P1 = exp(maxlogpcdf);
-        // x = a/n => x(1-x)^(n01)/ exp(maxlogpcdf) ~ a*exp(a-1)
-        // Could set x=R=pcdf/P1 and iterate x <- pcdf/(1-x)^(n-1)
-        int iter;
-        // Use the Taylor Series of p=x(1+x)**(n-1) with x=p+b*p^2+c*p^3+d*p^4+...
-        // to solve for a,b,c...
-        x = pcdf - (n-1)*pcdf * pcdf;
-        if (x <= 0 || x> 1.0/n) {
-            // Set x=a/n, p/p0 ~ a*exp(a-1) ~ a
-            double alpha = exp(logpcdf - maxlogp);
-            assert(alpha >= 0);
-            assert(alpha <= 1);
-            x = alpha / n;
-        }
-        x = MIN(x, 1.0/n);
-
-        // Now iterate x <- f(x) = p/(1+x)**(n-1)
-        // Derivative at fixed point is |f'(x)|<1 so converges.
-        for(iter=0; iter<MAX_FIXEDPOINT_ITERATIONS; iter++) {
-            double x0 = x;
-//            x = pcdf / pow(1+x0, n-1);
-            x = exp(logpcdf - (n-1)*log1p(x0));
-            if (_within_tol(x, x0, _xtol*0, 1e-10)) {
-                break;
-            }
-            if (++iterations > MAXITER) {
-                mtherr("smirnovi", TOOMANY);
-                break;
-            }
-        }
-        // The estimate can be quite good, especially if n*x << 1, but needs some N-R steps to tighten it up
-#else
+    maxlogpcdf = -log(n) + (n - 1) * log1p(1.0 / n);
+    if (logpcdf < maxlogpcdf) {
         double P1 = exp(maxlogpcdf);
         double R = pcdf/P1;
-        // Set x=pcdf/P1.  Do one iteration of N-R solving: x*e^(x-1) = R
-        // x <- x - (x exp(x-1) - pcdf)/((x+1)exp(x-1))
-        // If x_0 = R, X_1 = R(1-exp(1-R))/(R+1)
-        double alpha = R;
-        alpha = (alpha**2 + R * np.exp(1-alpha))/(1+alpha);
-        // alpha = (alpha**2 + R * np.exp(1-alpha))/(1+alpha);
-        x = alpha/n;
-#endif // USE_ALPHA_ITERATION
+        // Do one iteration of N-R solving: z*e^(z-1) = R, with z0=pcdf/P1
+        // z <- z - (z exp(z-1) - pcdf)/((z+1)exp(z-1))
+        // If z_0 = R, z_1 = R(1-exp(1-R))/(R+1)
+        double z0 = R;
+
+        xmin = pcdf / NPY_E;
+        xmax = pcdf;
+
+        z0 = (z0*z0 + R * exp(1-z0))/(1+z0);
+        if (0) {
+            // Do we need a 2nd iteration?
+            z0 = (z0*z0 + R * exp(1-z0))/(1+z0);
+        }
+        x = z0/n;
+        // The estimate can be quite good, especially if n>>1 and n*x << 1, but needs some N-R steps to tighten it up
+        // For small n, sometimes the alpha estimate does not lie in the interval [pcdf/e, pcdf],
+        // which is specific to a particular n.   If so, replace with a better estimate.
+        x = CLIP(x, xmin, xmax);
     }
     else
     {
-        sqrtn = sqrt(n);
-        /* Start with approximation of x from smirnov(n, sqrt(n)*x) ~ exp(-2 n x^2) */
-        x = sqrt(-logpsf / (2.0 * n));
-        x = MIN(x, (n-1.0)/n);
-
-        if (n >= MIN_N_ADJUST_ESTIMATE && x > 0.5/sqrtn) {
-            /* Do some bisections to get an estimate close enough to use NR.
-             If final is [low, high]:
-               a) If high < 0.5*sqrt(n), use x = high/n.
-               b) If low > 0.5*sqrt(n), use x = low/n
-               c) Otherwise use x = (low+high)/2/n
-
-             On the interval [j/n, (j+1)/n], smirnov(n, x) is a poly of degree n
-             and NR will converge quickly after it gets close enough.
-             */
-            int high = (int)ceil(n * x);
-            int low = 0;
-            high = MIN(high, n-1);
-            if (x >= 2/sqrtn) {
-                low = (int)floor(sqrtn);
-            }
-            assert(smirnov(n, low*1.0/n) >= psf);
-            function_calls++;
-            do {
-                int idx = (int)((low+high)/2);
-                double xidx = idx*1.0/n;
-                double fidx = smirnov(n, xidx);
-                ++function_calls;
-                /* If fidx is NAN, that is actually ok.
-                   Just means we need to start further to the left. */
-                if (npy_isnan(fidx) || fidx < psf) {
-                    high = idx;
-                } else if (fidx == psf) {
-                    return xidx;
-                } else if (fidx > psf) {
-                    assert (fidx > psf);
-                    low = idx;
-                }
-                if (++iterations >= MAX_BISECTION_STEPS) {
-                    break;
-                }
-            } while (low < high - 1);
-            x = (low > 0.5*sqrtn ? low : (high < 0.5*sqrtn ? high : (low+high)/2.0));
-            x /= n;
+        x = xmax6;
+        if (xmax6 < xmin) {
+            x = (xmax + xmin)/2;
         }
     }
     assert (x < 1);
 
+    a = xmin;
+    b = xmax;
+    fa = pcdf;
+    fb = -psf; // Has the correct sign
+
     /* smirnov should be well-enough behaved for NR starting at this location */
+    /* Use smirnov(n, x)-psf, or pcdf - smirnovc(n, x), whichever has smaller p */
     do {
-        double deriv, diff, x0 = x, deltax, val;
+        double dfdx, x0 = x, deltax, df;
         assert(x < 1);
         assert(x > 0);
 
-        val = _smirnov(n, x0, cdf);
+        df = ((pcdf < 0.5) ? (pcdf - _smirnov(n, x0, 1)) :  (_smirnov(n, x0, 0) - psf));
         ++function_calls;
-        diff = val - p;
-        if (diff == 0) {
+        if (df == 0) {
             return x;
         }
-        deriv = smirnovp(n, x0);
-        if (cdf) {
-            deriv = -deriv;
+        /* Update the bracketing interval */
+        if (df > 0) {
+            if (x > a) {
+                a = x;
+                fa = df;
+            }
+        } else if (df < 0) {
+             if (x < b) {
+                 b = x;
+                 fb = df;
+             }
         }
+        dfdx = smirnovp(n, x0);
         ++function_calls;
-        if (deriv == 0) {
+        if (dfdx == 0) {
             /* x was not within tolerance, but now we hit a 0 derivative.
             This implies that x >> 1/sqrt(n), and even then |smirnovp| >= |smirnov|
             so this condition is unexpected. */
-            mtherr("smirnovi", UNDERFLOW);
-            return (NPY_NAN);
-        }
 
-        deltax = diff / deriv;
-        x = x0 - deltax;
+            // This would be a problem for pure N-R, but we are bracketed, so can just do a bisection step.
+            if (0) {
+                /* Check if the value of df is already so small,
+                so that we can't do any better no matter how hard we try */
+                int krexp;
+                frexp(df, &krexp);
+                if (krexp > -1000) {
+                    break;
+                }
+                mtherr("smirnovi", UNDERFLOW);
+                return (NPY_NAN);
+            }
+            x = (a+b)/2;
+            deltax = x0 - x;
+        }  else {
+            deltax = df / dfdx;
+            x = x0 - deltax;
+        }
         /* Check out-of-bounds.
-           Not expecting this to happen --- smirnov is convex near x=1 and
+           Not expecting this to happen ofen --- smirnov is convex near x=1 and
            concave near x=0, and we should be approaching from the correct side.
-           If out-of-bounds, replace x with a value halfway to the endpoint. */
-        if (x <= 0) {
-            x = x0 / 2;
-            if (x <= 0.0) {
-                return 0;
-            }
-        } else if (x >= 1) {
-            x = (x0+1)/2;
-            if (x >= 1.0) {
-                /* Could happen if true value of x lies in interval [1-DBL_EPSILON, 1]
-                Requires p**(1/n) < DBL_EPSILON, which is uncommon. */
-                return 1.0;
-            }
+           If out-of-bounds, replace x with a midpoint of the brck. */
+        if (x <= a || x >= b)
+        {
+            x = (a + b) / 2.0;
         }
         /* Note that if psf is close to 1, f(x) -> 1, f'(x) -> -1.
            => abs difference |x-x0| is approx |f(x)-p| >= DBL_EPSILON,
            => |x-x0|/x >= DBL_EPSILON/x.
            => cannot use a purely relative criteria as it will fail for x close to 0.
         */
-        if ((cdf && _within_tol(x, x0, 0, _rtol)) || (!cdf && _within_tol(x, x0, _xtol, _rtol))) {
+        if (_within_tol(x, x0, (psf < 0.5 ? 0 : _xtol), _rtol)) {
             break;
         }
         if (++iterations > MAXITER) {
@@ -863,12 +943,18 @@ static double _smirnovi(int n, double p, int cdf)
 
 double smirnovi(int n, double p)
 {
-    return _smirnovi(n, p, 0);
+    if (npy_isnan(p)) {
+        return NPY_NAN;
+    }
+    return _smirnovi(n, p, 1-p);
 }
 
 double smirnovci(int n, double p)
 {
-    return _smirnovi(n, p, 1);
+    if (npy_isnan(p)) {
+        return NPY_NAN;
+    }
+    return _smirnovi(n, 1-p, p);
 }
 
 
@@ -894,10 +980,10 @@ double smirnovci(int n, double p)
  * main ()
  * {
  * int n;
- * double e, p, ps, pk, ek, y;
+ * double d, p, ps, pk, ek, y;
  * 
  * n = 5;
- * e = 0.0;
+ * d = 0.0;
  * p = 0.1;
  * loop:
  * ps = n;
@@ -910,20 +996,20 @@ double smirnovci(int n, double p)
  * }
  */
   /*
-   * getnum ("e", &e);
-   * ps = smirnov (n, e);
-   * y = sqrt ((double) n) * e;
+   * getnum ("d", &d);
+   * ps = smirnov (n, d);
+   * y = sqrt ((double) n) * d;
    * printf ("y = %.4e\n", y);
    * pk = kolmogorov (y);
    * printf ("Smirnov = %.15e, Kolmogorov/2 = %.15e\n", ps, pk / 2.0);
    */
 /*
  * getnum ("p", &p);
- * e = smirnovi (n, p);
- * printf ("Smirnov e = %.15e\n", e);
+ * d = smirnovi (n, p);
+ * printf ("Smirnov d = %.15e\n", d);
  * y = kolmogi (2.0 * p);
  * ek = y / sqrt ((double) n);
- * printf ("Kolmogorov e = %.15e\n", ek);
+ * printf ("Kolmogorov d = %.15e\n", ek);
  * goto loop;
  * }
  */

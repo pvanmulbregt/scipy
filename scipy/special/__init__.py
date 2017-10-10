@@ -250,7 +250,7 @@ Raw Statistical Functions
    smirnov      -- Kolmogorov-Smirnov complementary cumulative distribution function
    smirnovc     -- Kolmogorov-Smirnov cumulative distribution function
    smirnovi     -- Inverse to `smirnov`
-   smirnovic    -- Inverse to `smirnovc`
+   smirnovci    -- Inverse to `smirnovc`
    smirnovp     -- Derivative of `smirnov`
    kolmogorov   -- Complementary cumulative distribution function of Kolmogorov distribution
    kolmogi      -- Inverse function to `kolmogorov`

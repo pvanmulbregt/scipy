@@ -527,16 +527,16 @@ class TestCephes(object):
         assert_(np.isnan(cephes.kolmogi(np.nan)))
 
     def test_kolmogorov(self):
-        assert_equal(cephes.kolmogorov(0),1.0)
+        assert_equal(cephes.kolmogorov(0), 1.0)
 
     def test_kolmogp(self):
-        assert_equal(cephes.kolmogp(0),0.0)
+        assert_equal(cephes.kolmogp(0), -0.0)
 
     def test_kolmogc(self):
-        assert_equal(cephes.kolmogc(0),0.0)
+        assert_equal(cephes.kolmogc(0), 0.0)
 
     def test_kolmogci(self):
-        assert_equal(cephes.kolmogci(0),0.0)
+        assert_equal(cephes.kolmogci(0), 0.0)
         assert_(np.isnan(cephes.kolmogi(np.nan)))
 
     def _check_kv(self):
@@ -879,6 +879,12 @@ class TestCephes(object):
     def test_smirnov(self):
         assert_equal(cephes.smirnov(1,.1),0.9)
         assert_(np.isnan(cephes.smirnov(1,np.nan)))
+
+    def test_smirnovp(self):
+        assert_equal(cephes.smirnovp(1, .1), -1)
+        assert_equal(cephes.smirnovp(2, 0.75), -2*(0.25)**(2-1))
+        assert_equal(cephes.smirnovp(3, 0.75), -3*(0.25)**(3-1))
+        assert_(np.isnan(cephes.smirnovp(1, np.nan)))
 
     def test_smirnovc(self):
         assert_equal(cephes.smirnovc(1,.1),0.1)
