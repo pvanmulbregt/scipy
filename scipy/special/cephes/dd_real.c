@@ -8,9 +8,12 @@
  * Copyright (c) 2000-2007
  *
  * Contains implementation of non-inlined functions of double-double
- * package.  Inlined functions are found in dd_inline.h (in include
- * directory).
+ * package.  Inlined functions are found in dd_real_inline.h.
  */
+
+/*
+ * This code taken from v2.3.18 of the qd package.
+*/
 
 #include <float.h>
 #include <limits.h>

@@ -11,8 +11,6 @@
  * arithmetic package.
  */
 
-
-
 #ifndef  _DD_REAL_INLINE_H_
 #define  _DD_REAL_INLINE_H_ 1
 
