@@ -8,16 +8,17 @@
 from __future__ import division, print_function, absolute_import
 
 from ._distn_infrastructure import (entropy, rv_discrete, rv_continuous,
-                                    rv_frozen)
+                                    rv_frozen, rv_circular)
 
 from . import _continuous_distns
 from . import _discrete_distns
 
 from ._continuous_distns import *
 from ._discrete_distns import *
+from ._circular_distns import *
 
 # For backwards compatibility e.g. pymc expects distributions.__all__.
-__all__ = ['entropy', 'rv_discrete', 'rv_continuous', 'rv_histogram']
+__all__ = ['entropy', 'rv_discrete', 'rv_continuous', 'rv_histogram', 'rv_circular']
 
 # Add only the distribution names, not the *_gen names.
 __all__ += _continuous_distns._distn_names
