@@ -1427,6 +1427,7 @@ add_newdoc("scipy.special", "ellipkinc",
            Graphs, and Mathematical Tables. New York: Dover, 1972.
     """)
 
+
 add_newdoc("scipy.special", "entr",
     r"""
     entr(x)
@@ -3909,6 +3910,7 @@ add_newdoc("scipy.special", "ive",
            of a Complex Argument and Nonnegative Order",
            http://netlib.org/amos/
     """)
+
 
 add_newdoc("scipy.special", "j0",
     r"""
@@ -6927,6 +6929,12 @@ add_newdoc("scipy.special", "_spherical_kn_d",
     """
     Internal function, use `spherical_kn` instead.
     """)
+
+add_newdoc("scipy.special", "_jthetac",
+    """
+    Internal function, use `jtheta` instead.
+    """)
+
 
 add_newdoc("scipy.special", "loggamma",
     r"""

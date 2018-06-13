@@ -314,6 +314,11 @@
             "faddeeva_dawsn_complex": "D->D"
         }
     },
+    "_jthetac": {
+        "_jtheta.pxd": {
+            "_jtheta_complex": "DD->D"
+        }
+    },
     "ellipe": {
         "cephes.h": {
             "ellpe": "d->d"
