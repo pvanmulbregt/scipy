@@ -1253,44 +1253,20 @@
             "sindg": "d->d"
         }
     },
-    "smirnov": {
+    "_smirnov": {
         "_legacy.pxd": {
-            "smirnov_unsafe": "dd->d"
+            "_smirnov_unsafe": "ddd*d->d"
         },
         "cephes.h": {
-            "smirnov": "id->d"
+            "_smirnov": "idi*d->d"
         }
     },
-    "smirnovc": {
+    "_smirnovi": {
         "_legacy.pxd": {
-            "smirnovc_unsafe": "dd->d"
+            "_smirnovi_unsafe": "ddd->d"
         },
         "cephes.h": {
-            "smirnovc": "id->d"
-        }
-    },
-    "smirnovci": {
-        "_legacy.pxd": {
-            "smirnovci_unsafe": "dd->d"
-        },
-        "cephes.h": {
-            "smirnovci": "id->d"
-        }
-    },
-    "smirnovi": {
-        "_legacy.pxd": {
-            "smirnovi_unsafe": "dd->d"
-        },
-        "cephes.h": {
-            "smirnovi": "id->d"
-        }
-    },
-    "smirnovp": {
-        "_legacy.pxd": {
-            "smirnovp_unsafe": "dd->d"
-        },
-        "cephes.h": {
-            "smirnovp": "id->d"
+            "_smirnovi": "idi->d"
         }
     },
     "spence": {

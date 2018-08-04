@@ -6,10 +6,23 @@ import numpy as np
 from numpy.testing import assert_
 from scipy.special._testutils import FuncData
 
-from scipy.special import smirnov, smirnovi, smirnovc, smirnovci, smirnovp
+from scipy.special import smirnov, smirnovi
 from scipy.special import kolmogorov, kolmogi, kolmogc, kolmogci, kolmogp
 
 _rtol = 1e-10
+
+
+def smirnovc(n, d):
+    return smirnov(n, d, complementary=False)
+
+
+def smirnovp(n, d):
+    return smirnov(n, d, complementary=True, derivative=True)
+
+
+def smirnovci(n, p):
+    return smirnovi(n, p, complementary=False)
+
 
 class TestSmirnov(object):
     def test_nan(self):

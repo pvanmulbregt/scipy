@@ -247,10 +247,7 @@ Raw Statistical Functions
    chndtrinc    -- Inverse to `chndtr` vs `nc`
    chndtrix     -- Inverse to `chndtr` vs `x`
    smirnov      -- Kolmogorov-Smirnov complementary cumulative distribution function
-   smirnovc     -- Kolmogorov-Smirnov cumulative distribution function
    smirnovi     -- Inverse to `smirnov`
-   smirnovci    -- Inverse to `smirnovc`
-   smirnovp     -- Derivative of `smirnov`
    kolmogorov   -- Complementary cumulative distribution function of Kolmogorov distribution
    kolmogi      -- Inverse function to `kolmogorov`
    kolmogp      -- Derivative of `kolmogorov`
@@ -650,6 +647,7 @@ from ._logsumexp import logsumexp
 from . import specfun
 from . import orthogonal
 from .orthogonal import *
+from ._kolmogorov import *
 from .spfun_stats import multigammaln
 from ._ellip_harm import ellip_harm, ellip_harm_2, ellip_normal
 from .lambertw import lambertw

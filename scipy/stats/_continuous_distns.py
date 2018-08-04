@@ -41,16 +41,16 @@ class ksone_gen(rv_continuous):
 
     """
     def _pdf(self, x, n):
-        return -sc.smirnovp(n, x)
+        return sc.smirnov(n, x, complementary=False, derivative=True)
 
     def _cdf(self, x, n):
-        return sc.smirnovc(n, x)
+        return sc.smirnov(n, x, complementary=False)
 
     def _sf(self, x, n):
         return sc.smirnov(n, x)
 
     def _ppf(self, q, n):
-        return sc.smirnovci(n, q)
+        return sc.smirnovi(n, q, complementary=False)
 
     def _isf(self, q, n):
         return sc.smirnovi(n, q)

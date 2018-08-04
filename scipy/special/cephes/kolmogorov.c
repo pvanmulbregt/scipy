@@ -717,7 +717,7 @@ computeAv(int n, double x, int v, double2 Cman, int Cexpt,
 
 
 static ThreeProbs
-_smirnov(int n, double x)
+_smirnov3(int n, double x)
 {
     double nx, alpha;
     double2 AjSum = DD_C_ZERO;
@@ -731,12 +731,15 @@ _smirnov(int n, double x)
     if (!(n > 0 && x >= 0.0 && x <= 1.0)) {
         RETURN_3PROBS(NPY_NAN, NPY_NAN, NPY_NAN);
     }
+    /* PDF is always +1 for n=1, even at x = 1.0 */
     if (n == 1) {
         RETURN_3PROBS(1-x, x, 1.0);
     }
+    /* PDF is always 1 for x=0 */
     if (x == 0.0) {
         RETURN_3PROBS(1.0, 0.0, 1.0);
     }
+    /* PDF is always 0 for x=1 */
     if (x == 1.0) {
         RETURN_3PROBS(0.0, 1.0, 0.0);
     }
@@ -760,7 +763,7 @@ _smirnov(int n, double x)
         pdf = (nx + 1) * t / (1+x);
         cdf = x * t;
         sf = 1 - cdf;
-        /* Adjust if x=1/n *exactly* */
+        /* One interior point of slope discontinuity if x=1/n *exactly* */
         if (nxfl == 1) {
             assert(alpha == 0);
             pdf -= 0.5;
@@ -900,7 +903,7 @@ _smirnov(int n, double x)
  * finds x such that smirnov(n, x) = psf; smirnovc(n, x) = pcdf).
  */
 static double
-_smirnovi(int n, double psf, double pcdf)
+_smirnovi2(int n, double psf, double pcdf)
 {
     /*
      * Need to use a bracketing NR algorithm here and be very careful
@@ -1019,7 +1022,7 @@ _smirnovi(int n, double psf, double pcdf)
         assert(x < 1);
         assert(x > 0);
         {
-            ThreeProbs probs = _smirnov(n, x0);
+            ThreeProbs probs = _smirnov3(n, x0);
             ++function_calls;
             df = ((pcdf < 0.5) ? (pcdf - probs.cdf) : (probs.sf - psf));
             dfdx = -probs.pdf;
@@ -1083,72 +1086,34 @@ _smirnovi(int n, double psf, double pcdf)
 
 
 double
-smirnov(int n, double d)
+_smirnov(int n, double d, int complementary, double *pderiv)
 {
     ThreeProbs probs;
     if (npy_isnan(d)) {
+        *pderiv = NPY_NAN;
         return NPY_NAN;
     }
-    probs = _smirnov(n, d);
-    return probs.sf;
+    probs = _smirnov3(n, d);
+    if (complementary) {
+        *pderiv = -probs.pdf;
+        return probs.sf;
+    } else {
+        *pderiv = probs.pdf;
+        return probs.cdf;
+    }
 }
 
 double
-smirnovc(int n, double d)
+_smirnovi(int n, double p, int complementary)
 {
-    ThreeProbs probs;
-    if (npy_isnan(d)) {
-        return NPY_NAN;
-    }
-    probs = _smirnov(n, d);
-    return probs.cdf;
-}
-
-
-/*
- * Derivative of smirnov(n, d)
- *  One interior point of discontinuity at d=1/n.
-*/
-double
-smirnovp(int n, double d)
-{
-    ThreeProbs probs;
-    if (!(n > 0 && d >= 0.0 && d <= 1.0)) {
-        return (NPY_NAN);
-    }
-    if (n == 1) {
-         /* Slope is always -1 for n=1, even at d = 1.0 */
-         return -1.0;
-    }
-    if (d == 1.0) {
-        return -0.0;
-    }
-    /*
-     * If d is 0, the derivative is discontinuous, but approaching
-     * from the right the limit is -1
-     */
-    if (d == 0.0) {
-        return -1.0;
-    }
-    probs = _smirnov(n, d);
-    return -probs.pdf;
-}
-
-
-double
-smirnovi(int n, double p)
-{
+    double x;
     if (npy_isnan(p)) {
         return NPY_NAN;
     }
-    return _smirnovi(n, p, 1-p);
-}
-
-double
-smirnovci(int n, double p)
-{
-    if (npy_isnan(p)) {
-        return NPY_NAN;
+    if (complementary) {
+        x = _smirnovi2(n, p, 1-p);
+    } else {
+        x = _smirnovi2(n, 1-p, p);
     }
-    return _smirnovi(n, 1-p, p);
+    return x;
 }
