@@ -6,14 +6,14 @@ from ._ufuncs import ( _smirnov, _smirnovi)
 
 
 
-def smirnov(n, d, complementary=True, derivative=False):
+def smirnov(n, d, cdf=False, derivative=False):
     r"""
     Kolmogorov-Smirnov Survival Function or its derivative.
 
-    Returns the exact Kolmogorov-Smirnov complementary cumulative
-    distribution function (Dn+ or Dn-) for a one-sided test of
-    equality between an empirical and a theoretical distribution. It
-    is equal to the probability that the maximum difference between a
+    Returns the exact Kolmogorov-Smirnov Survival function
+    (aka the complementary cumulative distribution function) of Dn+ (or Dn-)
+    for a one-sided test of equality between an empirical and a theoretical
+    distribution. It is equal to the probability that the maximum difference between a
     theoretical distribution and an empirical one based on `n` samples
     is greater than d.
 
@@ -23,7 +23,7 @@ def smirnov(n, d, complementary=True, derivative=False):
       Number of samples
     d : float array_like
       Deviation between the Empirical CDF (ECDF) and the target CDF.
-    complementary : boolean
+    cdf : boolean
       If True, calculates the CDF (or its derivative the PDF).
       If False, calculates the Survival Function (or its derivative.)
     derivative : boolean
@@ -99,13 +99,13 @@ def smirnov(n, d, complementary=True, derivative=False):
     >>> plt.vlines([x[iplus]], cdfs[iplus], ecdfs[iplus+1], color='m', linestyle='dashed', lw=4)
     >>> plt.show()
     """
-    prob, deriv = _smirnov(n, d, (1 if complementary else 0))
+    prob, deriv = _smirnov(n, d, (1 if cdf else 0))
     if derivative:
         return deriv
     return prob
 
 
-def smirnovi(n, p, complementary=True):
+def smirnovi(n, p, cdf=False):
     r"""
     Inverse to `smirnov`
 
@@ -118,7 +118,7 @@ def smirnovi(n, p, complementary=True):
       Number of samples
     p : float array_like
         Probability
-    complementary : boolean
+    cdf : boolean
       If True, calculates the inverse CDF, or PPF.
       If False, calculates the inverse Survival Function
 
@@ -134,6 +134,6 @@ def smirnovi(n, p, complementary=True):
     scipy.stats.ksone : Provides the functionality as a continuous distribution
     kolmogorov, kolmogi, kolmogc, kolmogci, kolmogp : Functions for the two-sided distribution
     """
-    x = _smirnovi(n, p, (1 if complementary else 0))
+    x = _smirnovi(n, p, (1 if cdf else 0))
     return x
 

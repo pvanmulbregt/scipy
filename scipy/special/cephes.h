@@ -129,8 +129,8 @@ extern double yn(int n, double x);
 extern double zeta(double x, double q);
 extern double zetac(double x);
 
-extern double _smirnov(int n, double d, int complement, double *pderiv);
-extern double _smirnovi(int n, double p, int complement);
+extern double _smirnov(int n, double d, int cdf, double *pderiv);
+extern double _smirnovi(int n, double p, int cdf);
 extern double kolmogorov(double x);
 extern double kolmogi(double p);
 extern double kolmogp(double x);

@@ -1086,7 +1086,7 @@ _smirnovi2(int n, double psf, double pcdf)
 
 
 double
-_smirnov(int n, double d, int complementary, double *pderiv)
+_smirnov(int n, double d, int cdf, double *pderiv)
 {
     ThreeProbs probs;
     if (npy_isnan(d)) {
@@ -1094,26 +1094,26 @@ _smirnov(int n, double d, int complementary, double *pderiv)
         return NPY_NAN;
     }
     probs = _smirnov3(n, d);
-    if (complementary) {
-        *pderiv = -probs.pdf;
-        return probs.sf;
-    } else {
+    if (cdf) {
         *pderiv = probs.pdf;
         return probs.cdf;
+    } else {
+        *pderiv = -probs.pdf;
+        return probs.sf;
     }
 }
 
 double
-_smirnovi(int n, double p, int complementary)
+_smirnovi(int n, double p, int cdf)
 {
     double x;
     if (npy_isnan(p)) {
         return NPY_NAN;
     }
-    if (complementary) {
-        x = _smirnovi2(n, p, 1-p);
-    } else {
+    if (cdf) {
         x = _smirnovi2(n, 1-p, p);
+    } else {
+        x = _smirnovi2(n, p, 1-p);
     }
     return x;
 }

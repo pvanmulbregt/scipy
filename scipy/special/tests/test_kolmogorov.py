@@ -13,15 +13,15 @@ _rtol = 1e-10
 
 
 def smirnovc(n, d):
-    return smirnov(n, d, complementary=False)
+    return smirnov(n, d, cdf=True)
 
 
 def smirnovp(n, d):
-    return smirnov(n, d, complementary=True, derivative=True)
+    return smirnov(n, d, cdf=False, derivative=True)
 
 
 def smirnovci(n, p):
-    return smirnovi(n, p, complementary=False)
+    return smirnovi(n, p, cdf=True)
 
 
 class TestSmirnov(object):
