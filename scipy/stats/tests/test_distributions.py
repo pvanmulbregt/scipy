@@ -1852,7 +1852,7 @@ def TestArgsreduce():
 
 
 class TestFitMethod(object):
-    skip = ['ncf']
+    skip = ['ncf', 'ksone', 'kstwo']
 
     def setup_method(self):
         np.random.seed(1234)
