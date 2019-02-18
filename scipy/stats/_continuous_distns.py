@@ -25,6 +25,7 @@ from ._tukeylambda_stats import (tukeylambda_variance as _tlvar,
 from ._distn_infrastructure import (get_distribution_names, _kurtosis,
                                     _ncx2_cdf, _ncx2_log_pdf, _ncx2_pdf,
                                     rv_continuous, _skew, valarray)
+from ._ksstats import kolmogn, kolmognp
 from ._constants import _XMIN, _EULER, _ZETA3, _XMAX, _LOGXMAX
 
 
@@ -64,7 +65,7 @@ class ksone_gen(rv_continuous):
 
     See Also
     --------
-    kstwobign, kstest
+    kstwobign, kstwo, kstest
 
     References
     ----------
@@ -94,6 +95,56 @@ class ksone_gen(rv_continuous):
 ksone = ksone_gen(a=0.0, b=1.0, name='ksone')
 
 
+class kstwo_gen(rv_continuous):
+    r"""General Kolmogorov-Smirnov two-sided test.
+
+    This is the distribution of the two-sided Kolmogorov-Smirnov (KS)
+    statistics :math:`D_n` for a finite sample size ``n``
+    (the shape parameter).
+
+    %(before_notes)s
+
+    Notes
+    -----
+    :math:`D_n` is given by
+
+    .. math::
+
+        D_n &= \text{sup}_x |F_n(x) - F(x)|
+
+    where :math:`F` is a CDF and :math:`F_n` is an empirical CDF. `kstwo`
+    describes the distribution under the null hypothesis of the KS test
+    that the empirical CDF corresponds to :math:`n` i.i.d. random variates
+    with CDF :math:`F`.
+
+    %(after_notes)s
+
+    See Also
+    --------
+    kstwobign, ksone, kstest
+
+    References
+    ----------
+    .. [1] Simard, R., L'Ecuyer, P. "Computing the Two-Sided
+       Kolmogorov-Smirnov Distribution",  Journal of Statistical Software,
+       Vol 39, 11, 1-18 (2011).
+
+    %(example)s
+
+    """
+    def _pdf(self, x, n):
+        return kolmognp(n, x)
+
+    def _cdf(self, x, n):
+        return kolmogn(n, x)
+
+    def _sf(self, x, n):
+        return kolmogn(n, x, cdf=False)
+
+
+kstwo = kstwo_gen(a=0.0, b=1.0, name='kstwo')
+
+
 class kstwobign_gen(rv_continuous):
     r"""Kolmogorov-Smirnov two-sided test for large N.
 
@@ -120,12 +171,12 @@ class kstwobign_gen(rv_continuous):
 
     See Also
     --------
-    ksone, kstest
+    ksone, kstwo, kstest
 
     References
     ----------
-    .. [1] Marsaglia, G. et al. "Evaluating Kolmogorov's distribution",
-       Journal of Statistical Software, 8(18), 2003.
+    .. [1] Feller, W. "On the Kolmogorov-Smirnov Limit Theorems for Empirical
+       Distributions",  Ann. Math. Statist. Vol 19, 177-189 (1948).
 
     %(example)s
 

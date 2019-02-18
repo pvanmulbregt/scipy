@@ -26,6 +26,7 @@ failing_fits = [
         'gengamma',
         'kappa4',
         'ksone',
+        'kstwo',
         'mielke',
         'ncf',
         'ncx2',
