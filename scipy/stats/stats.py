@@ -4308,7 +4308,7 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate'):
 KstestResult = namedtuple('KstestResult', ('statistic', 'pvalue'))
 
 
-def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='approx'):
+def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='auto'):
     """
     Perform the Kolmogorov-Smirnov test for goodness of fit.
 
@@ -4337,10 +4337,12 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='approx'):
     alternative : {'two-sided', 'less','greater'}, optional
         Defines the alternative hypothesis (see explanation above).
         Default is 'two-sided'.
-    mode : 'approx' (default) or 'asymp', optional
+    mode : 'auto' (default) or 'exact', 'approx', 'asymp', optional
         Defines the distribution used for calculating the p-value.
 
-          - 'approx' : use approximation to exact distribution of test statistic
+          - 'auto' : use 'exact' for small size arrays, 'asymp' for large.
+          - 'exact' : use the exact distribution of test statistic.
+          - 'approx' : approximate the two-sided probability with twice the one-sided probability
           - 'asymp' : use asymptotic distribution of test statistic
 
     Returns
@@ -4367,13 +4369,13 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='approx'):
 
     >>> np.random.seed(987654321) # set random seed to get the same result
     >>> stats.kstest('norm', False, N=100)
-    (0.058352892479417884, 0.88531190944151261)
+    (0.058352892479417884, 0.8653960860778898)
 
     The above lines are equivalent to:
 
     >>> np.random.seed(987654321)
     >>> stats.kstest(stats.norm.rvs(size=100), 'norm')
-    (0.058352892479417884, 0.88531190944151261)
+    (0.058352892479417884, 0.8653960860778898)
 
     *Test against one-sided alternative hypothesis*
 
@@ -4402,7 +4404,7 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='approx'):
 
     >>> np.random.seed(987654321)
     >>> stats.kstest(stats.t.rvs(100,size=100),'norm')
-    (0.072018929165471257, 0.67630062862479168)
+    (0.072018929165471257, 0.6505883498379312)
 
     With 3 degrees of freedom the t distribution looks sufficiently different
     from the normal distribution, that we can reject the hypothesis that the
@@ -4413,6 +4415,12 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='approx'):
     (0.131016895759829, 0.058826222555312224)
 
     """
+    if alternative not in ['two-sided', 'greater', 'less', 'two_sided']:
+        raise ValueError("Unexpected alternative %s" % alternative)
+    # to not break compatibility with existing code
+    if alternative == 'two_sided':
+        alternative = 'two-sided'
+
     if isinstance(rvs, string_types):
         if (not cdf) or (cdf == rvs):
             cdf = getattr(distributions, rvs).cdf
@@ -4431,10 +4439,6 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='approx'):
         N = len(vals)
     cdfvals = cdf(vals, *args)
 
-    # to not break compatibility with existing code
-    if alternative == 'two_sided':
-        alternative = 'two-sided'
-
     if alternative in ['two-sided', 'greater']:
         Dplus = (np.arange(1.0, N + 1)/N - cdfvals).max()
         if alternative == 'greater':
@@ -4447,14 +4451,19 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='approx'):
 
     if alternative == 'two-sided':
         D = np.max([Dplus, Dmin])
-        if mode == 'asymp':
-            return KstestResult(D, distributions.kstwobign.sf(D * np.sqrt(N)))
-        if mode == 'approx':
-            pval_two = distributions.kstwobign.sf(D * np.sqrt(N))
-            if N > 2666 or pval_two > 0.80 - N*0.3/1000:
-                return KstestResult(D, pval_two)
+        if mode == 'auto':
+            if N < 1000000:
+                mode = 'exact'
             else:
-                return KstestResult(D, 2 * distributions.ksone.sf(D, N))
+                mode = 'asymp'
+        if mode == 'exact':
+            prob = distributions.kstwo.sf(D, N)
+        elif mode == 'asymp':
+            prob = distributions.kstwobign.sf(D * np.sqrt(N))
+        elif mode == 'approx':
+            prob = 2 * distributions.ksone.sf(D, N)
+        prob = (0 if prob < 0 else (1 if prob > 1 else prob))
+        return KstestResult(D, prob)
 
 
 # Map from names to lambda_ values used in power_divergence().
@@ -5104,8 +5113,6 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
 
     data_all = np.concatenate([data1, data2])
     # using searchsorted solves equal data problem
-    # Strictly speaking, the cdfs are not correct at the repeated data
-    # values, but the difference between the two cdfs is correct.
     cdf1 = np.searchsorted(data1, data_all, side='right') / n1
     cdf2 = np.searchsorted(data2, data_all, side='right') / n2
     cddiffs = cdf1 - cdf2
@@ -5160,9 +5167,7 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
         # The product n1*n2 is large.  Use Smirnov's asymptoptic formula.
         if alternative == 'two-sided':
             en = np.sqrt(n1 * n2 / (n1 + n2))
-            # Switch to using kstwo.sf() when it becomes available.
-            # prob = distributions.kstwo.sf(d, int(np.round(en)))
-            prob = distributions.kstwobign.sf(en * d)
+            prob = distributions.kstwo.sf(d, int(np.round(en)))
         else:
             m, n = max(n1, n2), min(n1, n2)
             z = np.sqrt(m*n/(m+n)) * d

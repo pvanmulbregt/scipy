@@ -48,6 +48,7 @@ from collections import namedtuple
 
 from . import distributions
 import scipy.special as special
+import scipy.stats.stats
 from ._stats_mstats_common import (
         _find_repeats,
         linregress as stats_linregress,
@@ -1269,28 +1270,10 @@ def ks_twosamp(data1, data2, alternative="two-sided"):
 
     """
     (data1, data2) = (ma.asarray(data1), ma.asarray(data2))
-    (n1, n2) = (data1.count(), data2.count())
-    n = (n1*n2/float(n1+n2))
-    mix = ma.concatenate((data1.compressed(), data2.compressed()))
-    mixsort = mix.argsort(kind='mergesort')
-    csum = np.where(mixsort < n1, 1./n1, -1./n2).cumsum()
-    # Check for ties
-    if len(np.unique(mix)) < (n1+n2):
-        csum = csum[np.r_[np.diff(mix[mixsort]).nonzero()[0],-1]]
-
-    alternative = str(alternative).lower()[0]
-    if alternative == 't':
-        d = ma.abs(csum).max()
-        prob = special.kolmogorov(np.sqrt(n)*d)
-    elif alternative == 'l':
-        d = -csum.min()
-        prob = np.exp(-2*n*d**2)
-    elif alternative == 'g':
-        d = csum.max()
-        prob = np.exp(-2*n*d**2)
-    else:
-        raise ValueError("Invalid value for the alternative hypothesis: "
-                         "should be in 'two-sided', 'less' or 'greater'")
+    alternative = {'t': 'two-sided', 'g':'greater', 'l': 'less'}.get(
+        alternative.lower()[0], alternative)
+    d, prob = scipy.stats.stats.ks_2samp(
+        data1.compressed(), data2.compressed(), alternative=alternative)
 
     return (d, prob)
 

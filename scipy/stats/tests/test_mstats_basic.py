@@ -632,11 +632,11 @@ class TestMisc(object):
         (winter,spring,summer,fall) = x.T
 
         assert_almost_equal(np.round(mstats.ks_twosamp(winter,spring),4),
-                            (0.1818,0.9892))
+                            (0.1818,0.9628))
         assert_almost_equal(np.round(mstats.ks_twosamp(winter,spring,'g'),4),
-                            (0.1469,0.7734))
+                            (0.1469,0.6886))
         assert_almost_equal(np.round(mstats.ks_twosamp(winter,spring,'l'),4),
-                            (0.1818,0.6744))
+                            (0.1818,0.6011))
 
     def test_friedmanchisq(self):
         # No missing values
